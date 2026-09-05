@@ -1,0 +1,71 @@
+# Knightfall scenario schema (v0.1) — the machine-readable spec every challenge follows.
+# A scenario reuses the shared delivery-robot base and only changes attacker start point,
+# target security policy, and success condition. Fields marked (required) must be present.
+# This file documents the shape; concrete scenarios live in ../scenarios/*.yaml.
+
+id: string                    # (required) unique slug, e.g. "01-diagnostic-leak"
+title: string                 # (required) human title
+version: string               # (required) scenario version, e.g. "0.1.0"
+category: enum                # (required) ros2-threat-model area:
+                              #   dds-comms | access-control | data-integrity |
+                              #   node-topic | supply-chain-config
+mitre_attack: [string]        # optional ATT&CK ids for cross-referencing/search
+difficulty: enum              # easy | medium | hard
+
+normal_mission:               # (required) what the robot does when healthy
+  description: string         #   e.g. "deliver package to Station A"
+  success_signal: string      #   how the judge confirms the mission completed normally
+
+attacker:                     # (required) the attacker's starting position & means
+  start: string               #   e.g. "on the lab network, no robot credentials"
+  identity: enum              #   external | network-participant | maintenance | localization-node
+  capabilities: [string]      #   e.g. ["terminal", "dds-domain-0 reachable"]
+  credentials: [string]       #   what the attacker legitimately holds (may be empty)
+
+flaw:                         # (required) the DESIGNED security defect (real mechanism, not vague)
+  summary: string             #   e.g. "diagnostics topic has no SROS2 access-control policy"
+  mechanism: string           #   the concrete misconfig, e.g. "permissions.xml allows any subscriber"
+  intended_permission: string #   what the correct policy should have been
+
+attack_goal: string           # (required) what the attacker must achieve this round
+
+budget:                       # (required) fair-comparison limits (see DESIGN §7)
+  steps: int                  #   PRIMARY cap: agent steps / tool-calls (hardware-independent)
+  wall_clock_s: int           #   SECONDARY cap: real seconds
+  tokens: int                 #   optional token cap for agent runs
+
+scoring:                      # (required) layered + graded (see DESIGN §6)
+  final_condition: enum       #   which layer decides pass/fail:
+                              #     interface_op | target_accept | mission_impact | physical_impact
+  type: enum                  #   flag_submit (attacker submits) | judge_confirm (judge verifies event)
+  graded:                     #   partial-credit map for the agent-benchmark view (0..1)
+    interface_op: float       #     e.g. 0.2
+    target_accept: float      #     e.g. 0.5
+    mission_impact: float     #     e.g. 0.8
+    physical_impact: float    #     e.g. 1.0
+  physical:                   #   ONLY for physical tasks — bounded, jitter-robust measurement
+    measure: string           #     e.g. "distance from planned path" | "entered no-go polygon"
+    threshold: string         #     e.g. "> 1.5 m" | "inside zone Z1"
+    trials: int               #     repeat N times; success = stable across trials
+    margin: string            #     tolerance for sim nondeterminism
+
+fix_oracle:                   # (required) proves the defense works AND doesn't break function
+  patch: string               #   the corrective config, e.g. "tighten permissions.xml to nav+maint only"
+  attack_blocked: string      #   how the judge verifies the same attack path now fails
+  mission_still_works: string #   how the judge verifies the normal mission still completes
+
+reset_scope: [string]         # (required) everything destroyed & recreated for a clean round:
+                              #   e.g. [nodes, credentials, discovery_cache, retained_msgs,
+                              #         params, mission_state, sim_state]
+
+readiness_checks: [string]    # (required) must pass BEFORE the budget clock starts:
+                              #   e.g. ["required nodes up", "legit comms ok",
+                              #         "task system accepts work", "sim & judge ready"]
+
+env:                          # (required) pinned for reproducibility (version record)
+  ros_distro: string          #   e.g. "jazzy"
+  rmw: string                 #   e.g. "rmw_fastrtps_cpp"
+  discovery: string           #   e.g. "simple" | "discovery-server"
+  transport: string           #   e.g. "udp" | "shm"
+  qos: string                 #   profile summary or ref
+  sim: string                 #   e.g. "gazebo-harmonic + nav2 warehouse world"
