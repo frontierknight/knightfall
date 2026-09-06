@@ -10,6 +10,23 @@ human players and AI security agents ([Crimson Knight](https://github.com/fronti
 
 > Status: **design / pre-implementation.** Versions & parameters lock after deployment validation.
 
+## Core principles (read first)
+
+- **North star: this is research aimed at a publishable benchmark.** Every design choice serves
+  a rigorous, citable result.
+- **The range *is* the benchmark.** Not "build a range, then make a separate benchmark" — it is
+  one thing: **reproducible + auto-scored + comparable = a benchmark by construction.**
+- **A full agent run = one trajectory** (a.k.a. rollout / session / episode): the complete record
+  of an agent attacking one challenge. **The trajectory is the training unit for later RL** —
+  but **RL comes later; we are not doing it now.** The range must record trajectories cleanly so
+  they are RL-ready when the time comes.
+- **Built on two knowledge bases, fused:** (1) how *traditional* CTF ranges / security benchmarks
+  are built (structure, scoring, reproducibility), and (2) what is *special about ROS 2 / embodied
+  robots* (DDS comms, SROS2 access control, the sensing→physical-action chain). Knightfall's novelty
+  is applying traditional benchmark rigor to the embodied-robot attack surface.
+- **Humans and AI agents both play the same range** — it is simultaneously a human CTF and an
+  agent benchmark.
+
 ## Contents
 - [`DESIGN.md`](DESIGN.md) — full design: principles, three-zone architecture, layered scoring,
   reset/timing, first three tasks, reuse stack, and the build order.

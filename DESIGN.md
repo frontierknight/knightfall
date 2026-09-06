@@ -29,6 +29,14 @@ It is simultaneously:
    still completes. This is what makes Knightfall a benchmark, not just a CTF.
 5. **Reproducibility is infrastructure.** Destroy-and-recreate reset, readiness gate, monotonic
    budget clock, and every ROS 2 knob pinned to a version record.
+6. **The range *is* the benchmark.** Reproducible + auto-scored + comparable = a benchmark by
+   construction; not a range plus a separate benchmark. North star = a publishable result.
+7. **A full agent run = one trajectory** (rollout / session / episode) = the future RL training
+   unit. Record trajectories cleanly now so they are RL-ready later. **RL itself is out of scope
+   for now** — see the roadmap; the range must not depend on it.
+8. **Fuse two knowledge bases:** traditional CTF-range / security-benchmark practice (structure,
+   scoring, reproducibility) **and** ROS 2 / embodied-robot specifics (DDS, SROS2, sensing→action).
+   The novelty is bringing traditional benchmark rigor to the embodied-robot attack surface.
 
 ## 3. The target: a warehouse delivery robot
 
