@@ -10,6 +10,22 @@ human players and AI security agents ([Crimson Knight](https://github.com/fronti
 
 > Status: **design / pre-implementation.** Versions & parameters lock after deployment validation.
 
+## What Knightfall is for (not just a paper)
+
+Knightfall is a **lasting platform**, with three roles that compound over its life — a paper is only
+the *first* output, not the point:
+
+1. **A range / benchmark** — humans and AI agents play the same ROS 2 robot security challenges;
+   reproducible, auto-scored, comparable. (First output: a publishable benchmark.)
+2. **A proving ground for agents** — where security agents (e.g. [Crimson Knight](https://github.com/frontierknight/crimson))
+   are tested and exercised against a real embodied target.
+3. **A trajectory factory** — **every full agent run is one trajectory**, logged cleanly and
+   accumulated over time. These trajectories are the **training data for later RL** (the data
+   flywheel). RL is not built now, but the range is designed so its output is RL-ready from day one.
+
+So Knightfall must be built to outlast the paper: clean trajectory logging, versioned scenarios, and
+an agent-facing interface are first-class, not afterthoughts.
+
 ## Core principles (read first)
 
 - **North star: this is research aimed at a publishable benchmark.** Every design choice serves
