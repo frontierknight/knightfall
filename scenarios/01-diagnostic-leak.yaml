@@ -63,9 +63,9 @@ readiness_checks:
   - "sim & judge ready; ground-truth bus isolated from target zone"
 
 env:
-  ros_distro: "jazzy"                 # PIN after deployment validation
+  ros_distro: "humble"        # validated 2026-09-06 on Ubuntu 22.04 (WSL2)
   rmw: "rmw_fastrtps_cpp"
   discovery: "simple"
   transport: "udp"
   qos: "default sensor/reliable mix (record exact profile)"
-  sim: "gazebo-harmonic + nav2 warehouse world"   # confirm during deliverable ①
+  sim: "gazebo-classic/fortress + nav2 warehouse world"   # confirm at deliverable ③/④

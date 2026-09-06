@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Knightfall deliverable ① — SROS2 access-control policy (draft, validate live).
+  Models scenario 01 (diagnostic leak): the diagnostics publisher and the maintenance
+  role may touch /diagnostics; NO enclave is granted to an attacker, so an unauthorized
+  participant cannot subscribe under Enforce mode.
+
+  Generate artifacts:
+    ros2 security generate_artifacts -k <keystore> -p knightfall_diag.policy.xml \
+        -e /diag_publisher /maintenance_listener
+-->
+<policy version="0.2.0">
+  <enclaves>
+
+    <!-- Robot diagnostics publisher: may publish the diagnostics topic. -->
+    <enclave path="/diag_publisher">
+      <profiles>
+        <profile ns="/" node="diag_publisher">
+          <topics publish="ALLOW">
+            <topic>diagnostics</topic>
+            <topic>rosout</topic>
+            <topic>parameter_events</topic>
+          </topics>
+        </profile>
+      </profiles>
+    </enclave>
+
+    <!-- Maintenance role: authorized to subscribe diagnostics. -->
+    <enclave path="/maintenance_listener">
+      <profiles>
+        <profile ns="/" node="maintenance_listener">
+          <topics subscribe="ALLOW">
+            <topic>diagnostics</topic>
+            <topic>rosout</topic>
+            <topic>parameter_events</topic>
+          </topics>
+        </profile>
+      </profiles>
+    </enclave>
+
+    <!-- NOTE: there is deliberately NO enclave for an attacker.
+         An unauthorized participant has no keystore identity, so under
+         ROS_SECURITY_STRATEGY=Enforce it cannot authenticate into the secured
+         domain and cannot read /diagnostics. That denial is the ① acceptance. -->
+
+  </enclaves>
+</policy>
