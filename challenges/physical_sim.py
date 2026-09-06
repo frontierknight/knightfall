@@ -26,6 +26,9 @@ from geometry_msgs.msg import Twist, Vector3, PoseStamped
 
 DT = 0.05
 GOAL = (float(os.environ.get("GOAL_X", 3.0)), float(os.environ.get("GOAL_Y", 0.0)))
+# fix-oracle: when hardened, the localization has an integrity check and ignores external
+# /loc_spoof overrides (the patch for task 03).
+HARDENED = os.environ.get("KNIGHTFALL_HARDENED", "0") == "1"
 
 
 class RobotSim(Node):
@@ -41,7 +44,10 @@ class RobotSim(Node):
         self.create_timer(DT, self._step)
 
     def _cmd(self, m): self.v, self.w = m.linear.x, m.angular.z
-    def _spoof(self, m): self.sx, self.sy = m.x, m.y
+    def _spoof(self, m):
+        if HARDENED:
+            return                                   # integrity check: reject external override
+        self.sx, self.sy = m.x, m.y
 
     def _step(self):
         # integrate TRUE pose (ground truth)
