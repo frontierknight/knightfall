@@ -1,6 +1,22 @@
-# Knightfall — Quickstart (self-check the v1)
+# Knightfall — Quickstart
 
-The range runs on **winbox's WSL2 Ubuntu 22.04** (ROS 2 Humble already installed). From your Mac:
+## For anyone, any machine — Docker (recommended)
+No ROS 2 setup needed. Anyone with Docker can run the whole range:
+```bash
+git clone https://github.com/frontierknight/knightfall
+cd knightfall
+docker build -t knightfall .
+docker run --rm knightfall list            # see challenges
+docker run --rm knightfall selftest all    # smoke test: task01 1.0/1.0, task03 2.5/2.5
+docker run --rm -it knightfall play task01 # play it yourself (interactive)
+docker run --rm knightfall oracle          # check the defenses (fix-oracles)
+```
+The image bundles ROS 2 Humble + SROS2 + the range. Verified: `selftest all` PASS in-container.
+
+---
+
+## Dev / self-check on winbox (no Docker)
+The range also runs directly on **winbox's WSL2 Ubuntu 22.04** (ROS 2 Humble installed). From your Mac:
 
 ## 1. Get onto the box
 ```bash

@@ -43,6 +43,14 @@ an agent-facing interface are first-class, not afterthoughts.
 - **Humans and AI agents both play the same range** — it is simultaneously a human CTF and an
   agent benchmark.
 
+## Run it (Docker — any machine, no ROS 2 setup)
+```bash
+git clone https://github.com/frontierknight/knightfall && cd knightfall
+docker build -t knightfall .
+docker run --rm knightfall selftest all      # task01 1.0/1.0 · task03 2.5/2.5
+docker run --rm -it knightfall play task01    # play it yourself
+```
+
 ## Try it (self-check)
 见 [`QUICKSTART.md`](QUICKSTART.md) — 在 winbox WSL 上 `python3 run.py list / run task01 / run task03 / oracle`。
 
