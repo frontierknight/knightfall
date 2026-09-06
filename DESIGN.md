@@ -188,6 +188,22 @@ exploiting a role-permission misconfig; understanding the data→physical-action
 
 Leaderboard, richer front-end, and the RL interface all build on top of ④.
 
+## 11b. Simulation environment — decision in progress (2026-09-06)
+
+The physical task needs a robot sim exposing **ground-truth pose** independent of the (spoofable)
+localization. Two options, being validated on winbox WSL2:
+- **Gazebo Classic + TB3 + Nav2** (installed): realistic, standard, has AMCL + ground truth. But on
+  WSL2 headless, `gzserver` has been slow/stalling to initialize ROS factory services (online
+  model-DB fetch + software-GL). Under debugging.
+- **Lightweight deterministic ROS 2 sim** (fallback / possibly *preferred* for v1): a small node that
+  integrates `/cmd_vel` → true pose (ground truth), runs a simple nav loop off a localization
+  estimate the attacker can spoof. **Fully deterministic + headless** → which RESEARCH.md flags as a
+  benchmark virtue (jitter-robust, reproducible scoring). Gazebo realism becomes a later enhancement
+  for ③/④, not a v1 blocker.
+
+**Leaning:** if Gazebo doesn't stabilize quickly on WSL, build the physical task on the deterministic
+sim first (better reproducibility, unblocks the novelty), add Gazebo realism later.
+
 ## 12. Open questions (validate during deployment)
 - Task-3 full propagation path on the chosen stack (data source → nav → measurable deviation).
 - Exact ROS 2 distro / RMW / QoS combination to pin for v1.
