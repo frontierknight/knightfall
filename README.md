@@ -43,6 +43,9 @@ an agent-facing interface are first-class, not afterthoughts.
 - **Humans and AI agents both play the same range** — it is simultaneously a human CTF and an
   agent benchmark.
 
+## Try it (self-check)
+见 [`QUICKSTART.md`](QUICKSTART.md) — 在 winbox WSL 上 `python3 run.py list / run task01 / run task03 / oracle`。
+
 ## Contents
 - [`RESEARCH.md`](RESEARCH.md) — 研究笔记：传统 CTF/range 做法 + ROS 2 特殊性 + 空白点/novelty + 引用清单（论文地基）。
 - [`DESIGN.md`](DESIGN.md) — full design: principles, three-zone architecture, layered scoring,
