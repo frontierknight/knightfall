@@ -28,6 +28,7 @@ human players and AI security agents ([Crimson Knight](https://github.com/fronti
   agent benchmark.
 
 ## Contents
+- [`RESEARCH.md`](RESEARCH.md) — 研究笔记：传统 CTF/range 做法 + ROS 2 特殊性 + 空白点/novelty + 引用清单（论文地基）。
 - [`DESIGN.md`](DESIGN.md) — full design: principles, three-zone architecture, layered scoring,
   reset/timing, first three tasks, reuse stack, and the build order.
 - [`schema/scenario.schema.yaml`](schema/scenario.schema.yaml) — machine-readable spec every
