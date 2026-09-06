@@ -17,13 +17,30 @@ cd ~/knightfall
 python3 run.py list
 ```
 
-## 3. Run a challenge (reference solver attacks it → score + trajectory)
+## 3. Play a challenge YOURSELF (interactive attacker console)
 ```bash
-python3 run.py run task01     # SROS2 diagnostic leak  -> success, 1.0/1.0
-python3 run.py run task03     # localization spoofing  -> success, 2.5/2.5 (physical_impact!)
+python3 run.py play task01
 ```
-Each run prints the outcome + score and writes an **RL-ready trajectory** to
-`trajectories/task0X_reference.jsonl` (meta → steps(action,observation,checkpoints,reward) → result).
+You get a briefing + a terminal. Type commands step by step, exactly like real hacking:
+```
+attacker$ ros2 topic list                     # discover topics
+attacker$ ros2 topic echo /diagnostics --once # -> data: FLAG{....}
+attacker$ submit FLAG{....}                    # submit what you read  -> judged
+attacker$ done                                 # finish + score
+```
+For task03 (physical), background the attack and let the robot drive under it:
+```
+attacker$ ros2 topic pub -r 5 /loc_spoof geometry_msgs/msg/Vector3 "{x: 0.0, y: 2.0}" &
+attacker$ done          # (after ~20s) -> judge reads ground truth: robot deviated -> physical_impact
+```
+**Human and agent use this exact same console** — the only difference is who types. Every session
+(yours or an agent's) is saved as an **RL-ready trajectory** in `trajectories/`.
+
+## 3b. Smoke test (scripted solver, proves it's solvable)
+```bash
+python3 run.py selftest all    # task01 -> 1.0/1.0, task03 -> 2.5/2.5
+```
+(This is a self-test driving the SAME console with a script — not the product.)
 
 ## 4. Check the defenses (fix-oracles)
 ```bash

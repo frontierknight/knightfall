@@ -36,6 +36,23 @@ class LocalizationSpoofBackend(ChallengeBackend):
         self._sim = None
         self._spoofed = False
         self._t_ready = None
+        self._bg = []
+
+    def exec_action(self, cmd: str) -> str:
+        """Run one command in the attacker terminal. Publishing to /loc_spoof is the attack."""
+        if "loc_spoof" in cmd:
+            self._spoofed = True                      # attacker injected a localization spoof
+        full = f"source {ROS_SETUP}; export ROS_DOMAIN_ID={DOMAIN}; {cmd.rstrip(' &')}"
+        if cmd.rstrip().endswith("&") or "topic pub" in cmd:
+            p = subprocess.Popen(["bash", "-lc", full], stdout=subprocess.DEVNULL,
+                                 stderr=subprocess.DEVNULL, preexec_fn=os.setsid)
+            self._bg.append(p)
+            return "[started in background]"
+        try:
+            r = subprocess.run(["bash", "-lc", full], capture_output=True, text=True, timeout=25)
+            return (r.stdout + r.stderr).strip() or "[no output]"
+        except subprocess.TimeoutExpired:
+            return "[timed out]"
 
     def _launch_sim(self):
         full = f"source {ROS_SETUP}; export ROS_DOMAIN_ID={DOMAIN}; GOAL_X={GOAL[0]} GOAL_Y={GOAL[1]} python3 {HERE}/physical_sim.py"
@@ -89,11 +106,13 @@ class LocalizationSpoofBackend(ChallengeBackend):
         return hit
 
     def reset(self):
-        if self._sim:
-            try:
-                os.killpg(os.getpgid(self._sim.pid), signal.SIGTERM)
-            except ProcessLookupError:
-                pass
-            self._sim = None
+        for p in [self._sim, *self._bg]:
+            if p:
+                try:
+                    os.killpg(os.getpgid(p.pid), signal.SIGTERM)
+                except ProcessLookupError:
+                    pass
+        self._sim = None
+        self._bg = []
         self._spoofed = False
         self._t_ready = None

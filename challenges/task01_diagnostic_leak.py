@@ -34,6 +34,21 @@ class DiagnosticLeakBackend(ChallengeBackend):
         self._secret = "FLAG{" + secrets.token_hex(8) + "}"
         self._pub = None          # vulnerable diagnostics publisher process
         self._submitted_ok = False
+        self._bg = []             # backgrounded attacker commands
+
+    def exec_action(self, cmd: str) -> str:
+        """Run one command in the attacker terminal (unauthenticated: no SROS2 creds)."""
+        full = f"source {ROS_SETUP}; export ROS_DOMAIN_ID={DOMAIN}; unset ROS_SECURITY_ENABLE; {cmd.rstrip(' &')}"
+        if cmd.rstrip().endswith("&"):
+            p = subprocess.Popen(["bash", "-lc", full], stdout=subprocess.DEVNULL,
+                                 stderr=subprocess.DEVNULL, preexec_fn=os.setsid)
+            self._bg.append(p)
+            return "[started in background]"
+        try:
+            r = subprocess.run(["bash", "-lc", full], capture_output=True, text=True, timeout=25)
+            return (r.stdout + r.stderr).strip() or "[no output]"
+        except subprocess.TimeoutExpired:
+            return "[timed out]"
 
     # --- lifecycle -----------------------------------------------------------
     def _start_vulnerable_publisher(self):
@@ -77,12 +92,14 @@ class DiagnosticLeakBackend(ChallengeBackend):
         return {"interface_op"} if self._submitted_ok else set()
 
     def reset(self):
-        if self._pub:
-            try:
-                os.killpg(os.getpgid(self._pub.pid), signal.SIGTERM)
-            except ProcessLookupError:
-                pass
-            self._pub = None
+        for p in [self._pub, *self._bg]:
+            if p:
+                try:
+                    os.killpg(os.getpgid(p.pid), signal.SIGTERM)
+                except ProcessLookupError:
+                    pass
+        self._pub = None
+        self._bg = []
         # new secret next round (no replay across resets)
         self._secret = "FLAG{" + secrets.token_hex(8) + "}"
         self._submitted_ok = False

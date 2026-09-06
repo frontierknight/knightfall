@@ -137,6 +137,22 @@ measurable* quantity (deviation > X m / entered a defined no-go polygon), scored
 
 ## 8. Human + Agent share the interface; model is replaceable
 
+**The range exposes ONE uniform interface** — an attacker console that takes an *action* (a
+command run in the attacker terminal) and returns an *observation* (its output), plus `submit`.
+- A **human** plays by typing actions at that console, step by step.
+- An **agent** plays through the **same** console — the only difference is *who emits the action*
+  (a person's keystrokes vs a model's output). The range does **not** have a "human mode" and an
+  "agent mode"; there is one interface, one action/observation/submit protocol, one scorer.
+- **Every session — human or agent — is recorded as a trajectory** and goes into the RL data pool.
+- A scripted "reference solver" is only a **self-test** of the machinery, never the product; it is
+  just another driver feeding the same console.
+
+Concretely (harness): `Session` = the console (`run_command(cmd)→obs`, `submit(value)`, logs the
+trajectory, scores via the judge). Drivers feed it: a human REPL, an agent adapter, or a scripted
+self-test — all identical from the range's point of view.
+
+### (original notes)
+
 v1 operations only:
 ```
 start a given challenge
