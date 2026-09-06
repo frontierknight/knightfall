@@ -1,0 +1,3 @@
+# generated trajectories are data, not source — keep only the committed sample(s)
+*.jsonl
+!sample_*.jsonl
