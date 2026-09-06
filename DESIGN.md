@@ -2,7 +2,7 @@
 
 > **A ROS 2 security CTF range for both humans and AI agents** — a Frontier Knight Labs benchmark.
 > One warehouse delivery robot + switchable security scenarios + independent attack / scoring / reset infrastructure.
-> Status: design (pre-implementation). Versions & parameters locked after deployment validation.
+> Status: v1 runnable & Dockerized (2 challenges end-to-end on real ROS 2 Humble; graded scoring + trajectories + fix-oracles + Docker). Versions lock as scope firms up.
 
 ---
 

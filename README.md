@@ -8,7 +8,7 @@ different deployment condition — so results stay comparable, and the same rang
 human players and AI security agents ([Crimson Knight](https://github.com/frontierknight/crimson) /
 [Azure Knight](https://github.com/frontierknight/azure)).
 
-> Status: **design / pre-implementation.** Versions & parameters lock after deployment validation.
+> Status: **v1 runnable & Dockerized** — 2 challenges (SROS2 leak + physical spoof) run end-to-end through one console (human == agent), graded + trajectory-logged + fix-oracles; validated on real ROS 2 Humble. Next: agent adapter + more challenges. Versions lock as scope firms up.
 
 ## What Knightfall is for (not just a paper)
 
