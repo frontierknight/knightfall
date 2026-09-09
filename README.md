@@ -71,3 +71,7 @@ docker run --rm -it knightfall play task01    # play it yourself
 ## Responsible use
 Fully simulated and isolated. Scenarios model misconfigurations for education and benchmarking —
 run only within the range. Do not target real robotic deployments.
+
+---
+
+**Get involved** — Frontier Knight Labs is an open, interest-driven effort (no funding, just the problem). Want to own a direction? RL folks especially welcome → [get involved](https://github.com/frontierknight).
