@@ -127,6 +127,7 @@ const LAYERS = [
   {key:"physical_impact",name:"Physical impact",varc:"--l4"},
 ];
 let sid = null;
+let poll = null;
 const $ = id => document.getElementById(id);
 function esc(s){return String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
 function hi(s){return s.replace(/(FLAG\{[^}]*\})/g,'<span class="flag">$1</span>');}
@@ -169,6 +170,16 @@ $("start").onclick=async()=>{
   $("briefing").textContent="BRIEFING\n"+Object.entries(res.briefing).map(([k,v])=>`  ${k}: ${typeof v==="object"?JSON.stringify(v):v}`).join("\n");
   $("outcome").innerHTML="";
   $("cmd").disabled=false; $("send").disabled=false; $("finish").disabled=false; $("cmd").focus();
+  // poll live state so impact that develops over time (e.g. task03 nav window) lights up
+  // without the player having to type another command
+  if(poll) clearInterval(poll);
+  poll=setInterval(async()=>{
+    if(!sid){ clearInterval(poll); poll=null; return; }
+    try{
+      const st=await(await fetch("/api/session/state?id="+encodeURIComponent(sid))).json();
+      if(st && !st.error){ setHits(st.checkpoints); setBudget(st.budget_left); }
+    }catch(e){}
+  },2000);
 };
 
 async function run(){
@@ -195,7 +206,8 @@ $("cmd").addEventListener("keydown",e=>{ if(e.key==="Enter") run(); });
 $("finish").onclick=async()=>{
   if(!sid) return;
   const res=await api("/api/session/finish",{id:sid});
-  sid=null; $("cmd").disabled=true; $("send").disabled=true; $("finish").disabled=true; $("start").disabled=false;
+  sid=null; if(poll){ clearInterval(poll); poll=null; }
+  $("cmd").disabled=true; $("send").disabled=true; $("finish").disabled=true; $("start").disabled=false;
   if(res.error){ line("obs","finish error: "+esc(res.error)); return; }
   setHits(Object.keys(res.breakdown||{}).filter(k=>res.breakdown[k]));
   const ok=res.outcome==="success";

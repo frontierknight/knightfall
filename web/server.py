@@ -80,6 +80,19 @@ class SessionManager:
         return {"accepted": ok, "checkpoints": sorted(s.backend.confirm_checkpoints()),
                 "budget_left": s.budget_left(), "over_budget": s.over_budget()}
 
+    def state(self, sid):
+        """Live snapshot for polling while a session is open: confirmed checkpoints, budget, and
+        (for physical tasks) the current true/perceived pose via the backend's live_state()."""
+        s = self._sessions.get(sid)
+        if not s:
+            return {"error": "unknown session"}
+        out = {"checkpoints": sorted(s.backend.confirm_checkpoints()),
+               "budget_left": s.budget_left(), "over_budget": s.over_budget()}
+        live = s.backend.live_state() if hasattr(s.backend, "live_state") else None
+        if live:
+            out["map"] = live
+        return out
+
     def finish(self, sid):
         s = self._sessions.pop(sid, None)
         if not s:
@@ -164,6 +177,9 @@ class Handler(BaseHTTPRequestHandler):
                 return
             with open(path, "rb") as fh:
                 self._send(200, fh.read(), "application/x-ndjson")
+        elif u.path == "/api/session/state":
+            sid = (parse_qs(u.query).get("id") or [""])[0]
+            self._send(200, json.dumps(MANAGER.state(sid)))
         else:
             self._send(404, json.dumps({"error": "not found"}))
 

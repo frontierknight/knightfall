@@ -60,6 +60,24 @@ class WebSessionTest(unittest.TestCase):
     def test_unknown_session(self):
         self.assertEqual(self.mgr.action("nope", "x").get("error"), "unknown session")
         self.assertEqual(self.mgr.submit("nope", "x").get("error"), "unknown session")
+        self.assertEqual(self.mgr.state("nope").get("error"), "unknown session")
+
+    def test_state_reports_checkpoints_and_optional_map(self):
+        sid = self.mgr.start("task01")["id"]
+        st = self.mgr.state(sid)
+        self.assertIn("checkpoints", st)
+        self.assertIn("budget_left", st)
+        self.assertNotIn("map", st)  # FakeBackend has no live_state()
+
+    def test_state_includes_map_when_backend_reports_pose(self):
+        def make_physical(task):
+            scenario, backend = fake_make(task)
+            backend.live_state = lambda: {"true": [3.0, -2.0], "goal": [3.0, 0.0], "threshold": 1.0}
+            return scenario, backend
+        mgr = SessionManager(make=make_physical)
+        sid = mgr.start("task03")["id"]
+        st = mgr.state(sid)
+        self.assertEqual(st["map"]["true"], [3.0, -2.0])
 
     def test_budget_enforced_via_manager(self):
         sid = self.mgr.start("task01")["id"]

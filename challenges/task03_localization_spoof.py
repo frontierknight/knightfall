@@ -116,6 +116,16 @@ class LocalizationSpoofBackend(ChallengeBackend):
                     self._hit.add("physical_impact")     # ended > threshold off target
         return set(self._hit)
 
+    def live_state(self):
+        """Current true/perceived pose for live display while the session is open (judge-only
+        truth file). Perceived = true + spoof offset, derived from the recorded gap direction is
+        not stored, so we report true, goal and threshold — enough for the live map."""
+        gt = self._read_truth()
+        if not gt:
+            return None
+        return {"true": gt.get("true"), "goal": gt.get("goal", list(GOAL)),
+                "threshold": DEV_THRESHOLD, "trail": gt.get("trail", [])}
+
     def artifacts(self):
         """Ground-truth data attached to the trajectory for replay/analysis: the perceived-vs-true
         pose trail, the goal, and the deviation threshold. Read before reset destroys the file."""
