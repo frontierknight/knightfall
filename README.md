@@ -83,6 +83,7 @@ the four graded checkpoints and (for the physical task) the perceived-vs-true ro
   a survey of prior ranges (§F) and citations.
 - [`REPRODUCE.md`](REPRODUCE.md) — one image, one command per claim.
 - [`docs/HUMAN_BASELINE.md`](docs/HUMAN_BASELINE.md) — protocol for a comparable human reference.
+- [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md) — each challenge mapped to the ROS 2 threat model, MITRE, CIA, and the DDS/SROS2 mechanism.
 - [`scenarios/`](scenarios/) — the challenge specs (the single source of truth, validated in CI).
 - [`harness/`](harness/) — the evaluation core: trajectory logger, graded judge, budget, batch
   runner, agent adapter, provenance.

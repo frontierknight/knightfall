@@ -85,6 +85,11 @@ Each challenge ships a corrective config; the oracle proves both that the same a
 and that the legitimate mission still completes (`harness/fix_oracle.py`, `challenges/oracles.py`).
 This measures defense, not only attack.
 
+## 5b. Threat-model mapping
+Each challenge maps to a ROS 2 threat-model element, a MITRE technique, the CIA property it
+violates, and the DDS/SROS2 mechanism its fix-oracle closes — see `docs/THREAT_MODEL.md`. The set
+covers access control on the DDS graph (01–02) and integrity of the sensing→action chain (03).
+
 ## 6. Challenges (first three)
 | # | Player role | Flaw class | Final condition |
 |---|---|---|---|
