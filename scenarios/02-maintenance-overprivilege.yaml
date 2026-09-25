@@ -22,7 +22,7 @@ attacker:
 
 flaw:
   summary: "The mission-control access policy grants the maintenance role the 'cancel' permission."
-  mechanism: "policy/mission_policy.vulnerable.json lists 'cancel' under the maintenance role."
+  mechanism: "the vulnerable policy lists a state-changing command under the maintenance role; with KNIGHTFALL_SEED the granted command varies (cancel|redirect), so the attacker must discover it (challenges/variants.py)."
   intended_permission: "only the dispatch role may change mission state (start/cancel/redirect)."
 
 attack_goal: "Issue a mission-control command as maintenance that actually changes the mission state."

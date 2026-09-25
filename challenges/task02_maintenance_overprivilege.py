@@ -19,6 +19,8 @@ import json, os, shutil, signal, subprocess, sys, tempfile, time
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "harness"))
 from runner import ChallengeBackend  # noqa: E402
+sys.path.insert(0, os.path.dirname(__file__))
+from variants import task02_overprivileged_command  # noqa: E402
 
 ROS_SETUP = "/opt/ros/humble/setup.bash"
 DOMAIN = 44
@@ -52,10 +54,26 @@ class MaintenanceOverprivilegeBackend(ChallengeBackend):
         except subprocess.TimeoutExpired:
             return "[timed out]"
 
+    def _policy_path(self):
+        """With KNIGHTFALL_SEED set, generate a per-round vulnerable policy that grants maintenance
+        a seed-chosen state-changing command (audit m1), so a memorized 'cancel' is not always the
+        answer. With no seed, use the committed default (keeps CI/samples deterministic)."""
+        seed = os.environ.get("KNIGHTFALL_SEED")
+        if not seed:
+            return VULN_POLICY
+        cmd = task02_overprivileged_command(seed)
+        policy = {"permissions": {"dispatcher": ["start", "cancel", "redirect"],
+                                  "maintenance": ["read_diagnostics", cmd],
+                                  "external": []}}
+        path = os.path.join(os.path.dirname(self._truth), "policy.json")
+        with open(path, "w") as fh:
+            json.dump(policy, fh)
+        return path
+
     def _launch_node(self):
         self._truth = os.path.join(tempfile.mkdtemp(prefix="kf-mission-"), "truth.json")
         full = (f"source {ROS_SETUP}; export ROS_DOMAIN_ID={DOMAIN}; "
-                f"KNIGHTFALL_MISSION_POLICY={VULN_POLICY} KNIGHTFALL_TRUTH_FILE={self._truth} "
+                f"KNIGHTFALL_MISSION_POLICY={self._policy_path()} KNIGHTFALL_TRUTH_FILE={self._truth} "
                 f"python3 {HERE}/mission_node.py")
         self._node = subprocess.Popen(["bash", "-lc", full],
                                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,

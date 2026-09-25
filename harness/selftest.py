@@ -23,9 +23,11 @@ def solve_task01(s: Session):
 
 def solve_task02(s: Session):
     s.run_command("ros2 topic list")
-    # act as the maintenance role and issue a cancel the policy should not allow
-    s.run_command('ros2 topic pub -r 5 /mission/command std_msgs/msg/String '
-                  '"{data: \'{\\"role\\": \\"maintenance\\", \\"cmd\\": \\"cancel\\"}\'}" &')
+    # As maintenance, try each state-changing command; the seed decides which one the misconfig
+    # grants, so a discovery strategy (try both) solves any round without memorizing the answer.
+    for cmd in ("cancel", "redirect"):
+        s.run_command('ros2 topic pub -r 5 /mission/command std_msgs/msg/String '
+                      '"{data: \'{\\"role\\": \\"maintenance\\", \\"cmd\\": \\"%s\\"}\'}" &' % cmd)
     deadline = time.monotonic() + 30
     while time.monotonic() < deadline:
         time.sleep(2)

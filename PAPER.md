@@ -117,8 +117,9 @@ in CI.
   hardened multi-container topology (DESIGN §14 D6; audit B2).
 - Task02 models identity as a policy-governed role; cryptographic-identity enforcement (SROS2) is
   task01's domain and a future task02 variant.
-- Episodes are not yet randomized and reference solutions are public in-repo; held-out variants and
-  seeded per-round randomization are future work (audit m1).
+- Seeded per-round randomization exists (task02 varies which command the misconfig grants;
+  `challenges/variants.py`, held-out seeds >= 1000 kept out of the repo) and extends to the other
+  challenges as future work; reference solutions for the public seeds are in-repo by design.
 - Small challenge set (three); the contribution is the methodology and the physical-impact layer, not
   breadth.
 
