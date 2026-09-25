@@ -91,9 +91,10 @@ class Session:
         outcome = "success" if res["binary_pass"] else "fail"
         used = {"steps": self._steps, "wall_clock_s": round(self._player_time(), 1),
                 "judge_s": round(self._judge_s, 1), "exhausted": self.over_budget()}
+        extra = self.backend.artifacts() if hasattr(self.backend, "artifacts") else None
         if self._open:
             self._traj.result(final_score=res["graded_score"], outcome=outcome,
-                              checkpoints=res["breakdown"], budget_used=used)
+                              checkpoints=res["breakdown"], budget_used=used, extra=extra)
             self._traj.__exit__()
             self._open = False
         self.backend.reset()

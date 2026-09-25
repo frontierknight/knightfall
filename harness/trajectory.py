@@ -54,13 +54,18 @@ class Trajectory:
         })
         return self._step
 
-    def result(self, final_score, outcome, checkpoints, budget_used):
-        """Close the trajectory with the final score + outcome (success|fail|timeout|error)."""
-        self._emit({
+    def result(self, final_score, outcome, checkpoints, budget_used, extra=None):
+        """Close the trajectory with the final score + outcome (success|fail|timeout|error).
+        `extra` merges ground-truth artifacts a backend attaches for analysis/replay
+        (e.g. task03's pose_trail) into the result line."""
+        rec = {
             "type": "result", "final_score": final_score, "max_score": self.max_score,
             "outcome": outcome, "checkpoints": checkpoints, "budget_used": budget_used,
             "steps": self._step, "ended_at": time.time(),
-        })
+        }
+        if extra:
+            rec.update(extra)
+        self._emit(rec)
 
     def _emit(self, obj):
         self._fh.write(json.dumps(obj, ensure_ascii=False) + "\n")

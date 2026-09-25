@@ -49,6 +49,7 @@ class RobotSim(Node):
         self.max_gap = 0.0                            # max |perceived - true| after the attack
         self.min_dist_goal = math.hypot(*GOAL)        # closest TRUE pose got to the goal
         self.ticks = 0
+        self.trail = []                               # downsampled [tick, tx, ty, px, py] for replay
         self.create_subscription(Twist, "/cmd_vel", self._cmd, 10)
         self.create_subscription(Vector3, "/loc_spoof", self._spoof, 10)
         self.loc = self.create_publisher(PoseStamped, "/localization/pose", 10)
@@ -75,6 +76,10 @@ class RobotSim(Node):
             self.max_gap = max(self.max_gap, math.hypot(self.sx, self.sy))
         self.min_dist_goal = min(self.min_dist_goal,
                                  math.hypot(GOAL[0] - self.x, GOAL[1] - self.y))
+        # sample the trail every ~0.5 s, capped, for the replay map (perceived vs true)
+        if self.ticks % 10 == 1 and len(self.trail) < 400:
+            self.trail.append([self.ticks, round(self.x, 3), round(self.y, 3),
+                               round(self.x + self.sx, 3), round(self.y + self.sy, 3)])
         self._write_truth()
 
     def _write_truth(self):
@@ -82,7 +87,8 @@ class RobotSim(Node):
             return
         state = {"true": [self.x, self.y], "goal": list(GOAL), "ticks": self.ticks,
                  "spoof_seen": self.spoof_seen, "max_gap": round(self.max_gap, 4),
-                 "min_dist_goal": round(self.min_dist_goal, 4), "hardened": HARDENED}
+                 "min_dist_goal": round(self.min_dist_goal, 4), "hardened": HARDENED,
+                 "trail": self.trail}
         d = os.path.dirname(TRUTH_FILE) or "."
         fd, tmp = tempfile.mkstemp(dir=d)
         with os.fdopen(fd, "w") as fh:

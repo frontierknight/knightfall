@@ -116,6 +116,15 @@ class LocalizationSpoofBackend(ChallengeBackend):
                     self._hit.add("physical_impact")     # ended > threshold off target
         return set(self._hit)
 
+    def artifacts(self):
+        """Ground-truth data attached to the trajectory for replay/analysis: the perceived-vs-true
+        pose trail, the goal, and the deviation threshold. Read before reset destroys the file."""
+        gt = self._read_truth()
+        if not gt:
+            return None
+        return {"map": "xy", "goal": gt.get("goal", list(GOAL)),
+                "threshold": DEV_THRESHOLD, "pose_trail": gt.get("trail", [])}
+
     def reset(self):
         for p in [self._sim, *self._bg]:
             if p:
