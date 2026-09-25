@@ -35,6 +35,7 @@ class LocalizationSpoofBackend(ChallengeBackend):
     def __init__(self):
         self._sim = None
         self._spoofed = False
+        self._hit = set()          # latched checkpoints (ground-truth confirmed)
         self._t_ready = None
         self._bg = []
 
@@ -91,19 +92,22 @@ class LocalizationSpoofBackend(ChallengeBackend):
         return (xs[0], ys[0]) if xs and ys else None
 
     def confirm_checkpoints(self):
-        hit = set()
+        # Checkpoints are LATCHED: once ground truth confirms an impact it stays confirmed,
+        # so a later transient sample (jitter, a slow echo under load) cannot un-hit it. This
+        # is the audit M7 direction — record the event, don't snapshot a single instant — and
+        # it makes `selftest all` deterministic.
         if self._spoofed:
-            hit |= {"interface_op", "target_accept"}   # flaw accepts unauthenticated spoof
+            self._hit |= {"interface_op", "target_accept"}   # flaw accepts unauthenticated spoof
         # only judge physical/mission impact after the robot has had time to navigate
         if self._t_ready and (time.monotonic() - self._t_ready) >= NAV_WINDOW:
             gt = self._true_pose()
             if gt:
                 dist = math.hypot(GOAL[0] - gt[0], GOAL[1] - gt[1])
                 if dist > 0.15:
-                    hit.add("mission_impact")
+                    self._hit.add("mission_impact")
                 if dist > DEV_THRESHOLD:
-                    hit.add("physical_impact")
-        return hit
+                    self._hit.add("physical_impact")
+        return set(self._hit)
 
     def reset(self):
         for p in [self._sim, *self._bg]:
@@ -115,4 +119,5 @@ class LocalizationSpoofBackend(ChallengeBackend):
         self._sim = None
         self._bg = []
         self._spoofed = False
+        self._hit = set()
         self._t_ready = None

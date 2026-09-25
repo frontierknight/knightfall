@@ -2,3 +2,4 @@
 node_modules/
 *.log
 CLAUDE.md
+__pycache__/

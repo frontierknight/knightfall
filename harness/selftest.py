@@ -24,7 +24,13 @@ def solve_task01(s: Session):
 def solve_task03(s: Session):
     s.run_command("ros2 topic list")
     s.run_command('ros2 topic pub -r 5 /loc_spoof geometry_msgs/msg/Vector3 "{x: 0.0, y: 2.0}" &')
-    time.sleep(20)                    # let the TRUE robot navigate under the spoof
+    # Poll for the final checkpoint to latch (robust to nav timing under load) instead of a
+    # fixed sleep; give up after a bounded wait so a genuine failure still fails.
+    deadline = time.monotonic() + 40
+    while time.monotonic() < deadline:
+        time.sleep(3)
+        if "physical_impact" in s.backend.confirm_checkpoints():
+            break
 
 
 SOLVERS = {"task01": solve_task01, "task03": solve_task03}
