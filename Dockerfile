@@ -12,8 +12,12 @@ FROM ros:humble-ros-base
 
 SHELL ["/bin/bash", "-c"]
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      ros-humble-sros2 ros-humble-demo-nodes-cpp python3 \
+      ros-humble-sros2 python3 \
     && rm -rf /var/lib/apt/lists/*
+
+# Provenance: bake the source revision so every trajectory records what produced it (audit M5).
+ARG KNIGHTFALL_GIT_SHA=unknown
+ENV KNIGHTFALL_GIT_SHA=${KNIGHTFALL_GIT_SHA}
 
 WORKDIR /knightfall
 COPY . /knightfall

@@ -26,6 +26,7 @@ class Trajectory:
     env: dict                       # version record (ros_distro, rmw, sim, ...)
     path: str                       # output .jsonl path
     max_score: float = 1.0
+    provenance: dict = field(default_factory=dict)   # git sha, image digest, scenario hash, seed
     _step: int = field(default=0, init=False)
     _t0: float = field(default_factory=time.monotonic, init=False)
     _fh: object = field(default=None, init=False)
@@ -38,7 +39,7 @@ class Trajectory:
             "scenario_version": self.scenario_version,
             "actor": {"kind": self.actor_kind, "name": self.actor_name},
             "budget": self.budget, "env": self.env, "max_score": self.max_score,
-            "started_at": time.time(),
+            "provenance": self.provenance, "started_at": time.time(),
         })
         return self
 
@@ -53,13 +54,18 @@ class Trajectory:
         })
         return self._step
 
-    def result(self, final_score, outcome, checkpoints, budget_used):
-        """Close the trajectory with the final score + outcome (success|fail|timeout|error)."""
-        self._emit({
+    def result(self, final_score, outcome, checkpoints, budget_used, extra=None):
+        """Close the trajectory with the final score + outcome (success|fail|timeout|error).
+        `extra` merges ground-truth artifacts a backend attaches for analysis/replay
+        (e.g. task03's pose_trail) into the result line."""
+        rec = {
             "type": "result", "final_score": final_score, "max_score": self.max_score,
             "outcome": outcome, "checkpoints": checkpoints, "budget_used": budget_used,
             "steps": self._step, "ended_at": time.time(),
-        })
+        }
+        if extra:
+            rec.update(extra)
+        self._emit(rec)
 
     def _emit(self, obj):
         self._fh.write(json.dumps(obj, ensure_ascii=False) + "\n")

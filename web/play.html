@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Knightfall Play</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --bg:#eaeef3; --surface:#fff; --surface-2:#f4f7fb; --ink:#16202e; --muted:#586a80;
+  --line:#d4dbe5; --accent:#0e7c86; --accent-ink:#06555c; --hit:#1a8f4c; --pend:#9aa7b8;
+  --l1:#2f80ed; --l2:#12a5b0; --l3:#e08a1e; --l4:#c0392b;
+  --term-bg:#0d1622; --term-ink:#d8e2f0; --term-dim:#8595ab; --term-prompt:#35c9d6;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0b111b; --surface:#131c2b; --surface-2:#0f1826; --ink:#e6edf6; --muted:#8ea0b8;
+  --line:#243348; --accent:#35c9d6; --accent-ink:#8ce6ee; --hit:#38c172; --pend:#55677e;
+  --l1:#5a9bf5; --l2:#35c9d6; --l3:#e8a94e; --l4:#e5604f;
+  --term-bg:#070d16; --term-ink:#d8e2f0; --term-dim:#7688a0; --term-prompt:#35c9d6;
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0b111b; --surface:#131c2b; --surface-2:#0f1826; --ink:#e6edf6; --muted:#8ea0b8;
+  --line:#243348; --accent:#35c9d6; --accent-ink:#8ce6ee; --hit:#38c172; --pend:#55677e;
+  --l1:#5a9bf5; --l2:#35c9d6; --l3:#e8a94e; --l4:#e5604f;
+  --term-bg:#070d16; --term-ink:#d8e2f0; --term-dim:#7688a0; --term-prompt:#35c9d6;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:14px;line-height:1.5}
+.wrap{max-width:1120px;margin:0 auto;padding:16px;padding-block:20px;display:flex;flex-direction:column;gap:16px;min-height:100%}
+h1{font-size:18px;font-weight:700;margin:0;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:12.5px}
+.mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+.topbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;justify-content:space-between}
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;
+  padding:6px 12px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit}
+.btn:hover{border-color:var(--accent)}
+.btn:disabled{opacity:.5;cursor:default}
+select.btn{padding-right:8px}
+.grid{display:grid;grid-template-columns:1.35fr 1fr;gap:16px;align-items:start}
+@media(max-width:760px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.phead{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 14px;
+  border-bottom:1px solid var(--line);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.term{background:var(--term-bg);color:var(--term-ink);padding:14px 16px;min-height:320px;max-height:52vh;
+  overflow:auto;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:13px;line-height:1.6}
+.term .row{white-space:pre-wrap;word-break:break-word}
+.term .cmd .p{color:var(--term-prompt);font-weight:600}
+.term .obs{color:var(--term-dim);margin:2px 0 10px}
+.term .flag{color:#ffd479}
+.inputrow{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--line);background:var(--surface)}
+.inputrow input{flex:1;min-width:0;border:1px solid var(--line);border-radius:8px;padding:8px 10px;
+  font-family:"IBM Plex Mono",monospace;font-size:13px;background:var(--surface-2);color:var(--ink)}
+.jbody{padding:14px}
+.ladder{display:flex;flex-direction:column;gap:8px;margin:0 0 14px;padding:0;list-style:none}
+.layer{display:flex;align-items:center;gap:10px;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:var(--surface-2)}
+.layer .dot{width:11px;height:11px;border-radius:50%;background:var(--pend);flex:none}
+.layer.hit .dot{background:var(--lc)}
+.layer.hit{border-color:color-mix(in srgb,var(--lc) 45%,var(--line))}
+.layer .name{font-weight:600}
+.meta{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:12px;color:var(--muted)}
+.meta b{color:var(--ink);font-weight:600}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:700}
+.pill.success{background:color-mix(in srgb,var(--hit) 18%,transparent);color:var(--hit)}
+.pill.other{background:color-mix(in srgb,var(--muted) 20%,transparent);color:var(--muted)}
+.briefing{margin:0 0 12px;padding:10px 12px;border-left:3px solid var(--accent);background:var(--surface-2);
+  border-radius:0 8px 8px 0;font-size:12.5px;white-space:pre-wrap}
+.foot{color:var(--muted);font-size:11.5px;text-align:center}
+.foot code{font-family:"IBM Plex Mono",monospace}
+a{color:var(--accent-ink)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div>
+      <h1>Knightfall Play</h1>
+      <div class="sub">Play a live challenge in the browser — the same console and scoring an agent drives.</div>
+    </div>
+    <div class="controls">
+      <select id="task" class="btn">
+        <option value="task01">task01 · diagnostic leak</option>
+        <option value="task02">task02 · maintenance over-privilege</option>
+        <option value="task03">task03 · localization spoofing</option>
+      </select>
+      <button class="btn" id="start">Start</button>
+      <button class="btn" id="finish" disabled>Finish &amp; score</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+      <div class="phead"><span>Attacker console</span><span class="mono" id="scn"></span></div>
+      <div class="term" id="term"><div class="row obs">Pick a challenge and press Start.</div></div>
+      <div class="inputrow">
+        <input id="cmd" class="mono" placeholder="ros2 topic list    ·    submit &lt;value&gt;" disabled autocomplete="off">
+        <button class="btn" id="send" disabled>Run</button>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="phead"><span>Judge</span><span id="outcome"></span></div>
+      <div class="jbody">
+        <div class="briefing" id="briefing" hidden></div>
+        <ul class="ladder" id="ladder"></ul>
+        <div class="meta" id="meta"></div>
+      </div>
+    </div>
+  </div>
+
+  <p class="foot">Served by <code>run.py web</code>. Human and agent drive the same
+    <code>/api/session/*</code> routes; every session is scored and logged as a trajectory.
+    Replays open in <a href="/">the replay console</a>.</p>
+</div>
+
+<script>
+const LAYERS = [
+  {key:"interface_op",  name:"Interface op",   varc:"--l1"},
+  {key:"target_accept", name:"Target accept",  varc:"--l2"},
+  {key:"mission_impact",name:"Mission impact", varc:"--l3"},
+  {key:"physical_impact",name:"Physical impact",varc:"--l4"},
+];
+let sid = null;
+let poll = null;
+const $ = id => document.getElementById(id);
+function esc(s){return String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+function hi(s){return s.replace(/(FLAG\{[^}]*\})/g,'<span class="flag">$1</span>');}
+
+function buildLadder(){
+  const ul = $("ladder"); ul.innerHTML="";
+  for(const L of LAYERS){
+    const li=document.createElement("li");
+    li.className="layer"; li.dataset.key=L.key; li.style.setProperty("--lc",`var(${L.varc})`);
+    li.innerHTML=`<span class="dot"></span><span class="name">${L.name}</span>`;
+    ul.appendChild(li);
+  }
+}
+function setHits(hits){
+  const set=new Set(hits||[]);
+  document.querySelectorAll(".layer").forEach(li=>li.classList.toggle("hit",set.has(li.dataset.key)));
+}
+function setBudget(b){
+  if(!b) return;
+  $("meta").innerHTML = `<span>steps left</span><b class="mono">${b.steps}</b>`+
+    `<span>time left</span><b class="mono">${b.wall_clock_s}s</b>`;
+}
+function line(cls,html){
+  const d=document.createElement("div"); d.className="row "+cls; d.innerHTML=html;
+  const t=$("term"); t.appendChild(d); t.scrollTop=t.scrollHeight;
+}
+async function api(path,body){
+  const r=await fetch(path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+  return r.json();
+}
+
+$("start").onclick=async()=>{
+  $("start").disabled=true;
+  const res=await api("/api/session/start",{task:$("task").value});
+  if(res.error){ $("start").disabled=false; line("obs","start failed: "+esc(res.error)); return; }
+  sid=res.id;
+  $("term").innerHTML=""; buildLadder(); setHits([]); setBudget(res.budget_left);
+  $("scn").textContent=res.scenario;
+  $("briefing").hidden=false;
+  $("briefing").textContent="BRIEFING\n"+Object.entries(res.briefing).map(([k,v])=>`  ${k}: ${typeof v==="object"?JSON.stringify(v):v}`).join("\n");
+  $("outcome").innerHTML="";
+  $("cmd").disabled=false; $("send").disabled=false; $("finish").disabled=false; $("cmd").focus();
+  // poll live state so impact that develops over time (e.g. task03 nav window) lights up
+  // without the player having to type another command
+  if(poll) clearInterval(poll);
+  poll=setInterval(async()=>{
+    if(!sid){ clearInterval(poll); poll=null; return; }
+    try{
+      const st=await(await fetch("/api/session/state?id="+encodeURIComponent(sid))).json();
+      if(st && !st.error){ setHits(st.checkpoints); setBudget(st.budget_left); }
+    }catch(e){}
+  },2000);
+};
+
+async function run(){
+  const raw=$("cmd").value.trim(); if(!raw||!sid) return;
+  $("cmd").value="";
+  let res;
+  if(raw.startsWith("submit ")){
+    const v=raw.slice(7).trim();
+    line("cmd",`<span class="p">attacker$</span> submit ${esc(v)}`);
+    res=await api("/api/session/submit",{id:sid,value:v});
+    line("obs",`accepted=${res.accepted}`);
+  } else {
+    line("cmd",`<span class="p">attacker$</span> ${esc(raw)}`);
+    res=await api("/api/session/action",{id:sid,cmd:raw});
+    if(res.observation!=null) line("obs",hi(esc(res.observation)));
+  }
+  if(res.error){ line("obs","error: "+esc(res.error)); return; }
+  setHits(res.checkpoints); setBudget(res.budget_left);
+  if(res.over_budget) line("obs","[budget exhausted — press Finish to score]");
+}
+$("send").onclick=run;
+$("cmd").addEventListener("keydown",e=>{ if(e.key==="Enter") run(); });
+
+$("finish").onclick=async()=>{
+  if(!sid) return;
+  const res=await api("/api/session/finish",{id:sid});
+  sid=null; if(poll){ clearInterval(poll); poll=null; }
+  $("cmd").disabled=true; $("send").disabled=true; $("finish").disabled=true; $("start").disabled=false;
+  if(res.error){ line("obs","finish error: "+esc(res.error)); return; }
+  setHits(Object.keys(res.breakdown||{}).filter(k=>res.breakdown[k]));
+  const ok=res.outcome==="success";
+  $("outcome").innerHTML=`<span class="pill ${ok?'success':'other'}">${esc(res.outcome)} · ${res.graded_score}/${res.max_score}</span>`;
+  line("obs",`=== scored: ${res.outcome} — ${res.graded_score}/${res.max_score} — trajectory saved ===`);
+};
+
+buildLadder();
+</script>
+</body>
+</html>

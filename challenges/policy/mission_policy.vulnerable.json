@@ -1,0 +1,8 @@
+{
+  "_comment": "VULNERABLE mission-control RBAC policy. The maintenance role is wrongly granted the 'cancel' permission that should belong to dispatch only — a real over-privilege misconfig.",
+  "permissions": {
+    "dispatcher":  ["start", "cancel", "redirect"],
+    "maintenance": ["read_diagnostics", "cancel"],
+    "external":    []
+  }
+}

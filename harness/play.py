@@ -17,9 +17,11 @@ from session import Session          # noqa: E402
 from registry import make            # noqa: E402
 
 
-def main(task):
+def main(task, participant=None):
     scenario, backend = make(task)
-    who = f"human:{getpass.getuser()}"
+    # For baseline studies pass an opaque participant id (see docs/HUMAN_BASELINE.md) so no OS
+    # username is written into the trajectory; otherwise fall back to the local login.
+    who = f"human:{participant}" if participant else f"human:{getpass.getuser()}"
     out = os.path.join(HERE, "..", "trajectories", f"{scenario['id']}_{who.replace(':','_')}.jsonl")
     s = Session(scenario, backend, actor_kind="human", actor_name=who, out_path=out)
     briefing, err = s.start()
@@ -60,5 +62,5 @@ def main(task):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("usage: python3 play.py <task>  (task01|task03)"); sys.exit(2)
-    sys.exit(main(sys.argv[1]))
+        print("usage: python3 play.py <task> [participant_id]  (task01|task02|task03)"); sys.exit(2)
+    sys.exit(main(sys.argv[1], sys.argv[2] if len(sys.argv) > 2 else None))

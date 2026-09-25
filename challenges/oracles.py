@@ -9,7 +9,7 @@ task03: the patch = a localization integrity check (physical_sim with KNIGHTFALL
         reaches the goal anyway -> attack blocked AND mission still works.
 """
 from __future__ import annotations
-import math, os, re, signal, subprocess, sys, time
+import json, math, os, re, shutil, signal, subprocess, sys, tempfile, time
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "harness"))
 from fix_oracle import FixOracle  # noqa: E402
@@ -49,10 +49,12 @@ class Task03FixOracle(FixOracle):
     DEV_THRESHOLD = 1.0
 
     def apply_patch(self):
-        # hardened sim: integrity check ignores /loc_spoof
+        # hardened sim: integrity check ignores /loc_spoof. Ground truth is read from the
+        # judge-only truth file (min distance the TRUE pose got to the goal), not DDS.
+        self._truth = os.path.join(tempfile.mkdtemp(prefix="kf-oracle-truth-"), "truth.json")
         full = (f"source {ROS_SETUP}; export ROS_DOMAIN_ID={self.DOMAIN}; "
                 f"KNIGHTFALL_HARDENED=1 GOAL_X={self.GOAL[0]} GOAL_Y={self.GOAL[1]} "
-                f"python3 {HERE}/physical_sim.py")
+                f"KNIGHTFALL_TRUTH_FILE={self._truth} python3 {HERE}/physical_sim.py")
         self._sim = subprocess.Popen(["bash", "-lc", full], stdout=subprocess.DEVNULL,
                                      stderr=subprocess.DEVNULL, preexec_fn=os.setsid)
         time.sleep(4)
@@ -62,21 +64,26 @@ class Task03FixOracle(FixOracle):
         self._pub = subprocess.Popen(["bash", "-lc", full2], stdout=subprocess.DEVNULL,
                                      stderr=subprocess.DEVNULL, preexec_fn=os.setsid)
         time.sleep(16)                                # let it navigate under the (ignored) spoof
-        self._gt = self._true_pose()
-        self._dist = math.hypot(self.GOAL[0] - self._gt[0], self.GOAL[1] - self._gt[1]) if self._gt else 99.0
+        gt = self._read_truth()
+        # where the TRUE robot ended up; small => the (ignored) spoof did not move it off goal
+        if gt:
+            tx, ty = gt.get("true", (99.0, 99.0))
+            self._dist = math.hypot(self.GOAL[0] - tx, self.GOAL[1] - ty)
+        else:
+            self._dist = 99.0
 
-    def _true_pose(self):
-        r = _sh("timeout 6 ros2 topic echo /ground_truth/pose --once", self.DOMAIN,
-                capture_output=True, text=True, timeout=12)
-        xs = [float(l.split(":")[1]) for l in r.stdout.splitlines() if l.strip().startswith("x:")]
-        ys = [float(l.split(":")[1]) for l in r.stdout.splitlines() if l.strip().startswith("y:")]
-        return (xs[0], ys[0]) if xs and ys else None
+    def _read_truth(self):
+        try:
+            with open(self._truth) as fh:
+                return json.load(fh)
+        except (OSError, ValueError, TypeError):
+            return None
 
     def attack_blocked(self):
-        return self._dist <= self.DEV_THRESHOLD, f"true deviation under spoof = {round(self._dist,2)} m (want <= {self.DEV_THRESHOLD})"
+        return self._dist <= self.DEV_THRESHOLD, f"closest TRUE approach to goal under spoof = {round(self._dist,2)} m (want <= {self.DEV_THRESHOLD})"
 
     def mission_still_works(self):
-        return self._dist < 0.15, f"reached goal (deviation {round(self._dist,2)} m, want < 0.15)"
+        return self._dist < 0.15, f"robot reached goal (closest {round(self._dist,2)} m, want < 0.15)"
 
     def teardown(self):
         for p in (getattr(self, "_pub", None), getattr(self, "_sim", None)):
@@ -85,3 +92,72 @@ class Task03FixOracle(FixOracle):
                     os.killpg(os.getpgid(p.pid), signal.SIGTERM)
                 except ProcessLookupError:
                     pass
+        if getattr(self, "_truth", None):
+            shutil.rmtree(os.path.dirname(self._truth), ignore_errors=True)
+
+
+class Task02FixOracle(FixOracle):
+    """Task 02: the patch is the hardened RBAC policy (maintenance loses 'cancel'). Under it a
+    maintenance cancel is ignored (attack blocked) but a dispatch cancel still works."""
+    challenge_id = "02-maintenance-overprivilege"
+    DOMAIN = 59
+    HARDENED_POLICY = os.path.join(HERE, "policy", "mission_policy.hardened.json")
+
+    def _pub_command(self, role, cmd):
+        # Match the working selftest escaping: wrap the JSON payload in single quotes inside the
+        # YAML data field, with escaped double quotes (bare double-quote wrapping is not parsed).
+        inner = json.dumps({"role": role, "cmd": cmd}).replace('"', '\\"')
+        arg = f"\"{{data: '{inner}'}}\""
+        full = (f"source {ROS_SETUP}; export ROS_DOMAIN_ID={self.DOMAIN}; "
+                f"timeout 4 ros2 topic pub -r 5 /mission/command std_msgs/msg/String {arg}")
+        subprocess.run(["bash", "-lc", full], stdout=subprocess.DEVNULL,
+                       stderr=subprocess.DEVNULL)
+
+    def _state(self):
+        gt = self._read_truth()
+        return gt.get("state") if gt else None
+
+    def _read_truth(self):
+        try:
+            with open(self._truth) as fh:
+                return json.load(fh)
+        except (OSError, ValueError, TypeError):
+            return None
+
+    def _launch(self):
+        self._truth = os.path.join(tempfile.mkdtemp(prefix="kf-mission-oracle-"), "truth.json")
+        full = (f"source {ROS_SETUP}; export ROS_DOMAIN_ID={self.DOMAIN}; "
+                f"KNIGHTFALL_MISSION_POLICY={self.HARDENED_POLICY} "
+                f"KNIGHTFALL_TRUTH_FILE={self._truth} python3 {HERE}/mission_node.py")
+        return subprocess.Popen(["bash", "-lc", full], stdout=subprocess.DEVNULL,
+                                stderr=subprocess.DEVNULL, preexec_fn=os.setsid)
+
+    def apply_patch(self):
+        self._node = self._launch()
+        time.sleep(4)
+        # (1) attacker: maintenance cancel — must be ignored under the hardened policy
+        self._pub_command("maintenance", "cancel")
+        time.sleep(2)
+        self._after_attack = self._state()
+        # (2) legitimate: dispatch cancel — must still change the mission state
+        self._pub_command("dispatcher", "cancel")
+        time.sleep(2)
+        self._after_dispatch = self._state()
+
+    def attack_blocked(self):
+        ok = self._after_attack == "EN_ROUTE"
+        return ok, f"state after maintenance cancel = {self._after_attack} (want EN_ROUTE)"
+
+    def mission_still_works(self):
+        ok = self._after_dispatch == "CANCELLED"
+        return ok, f"state after dispatch cancel = {self._after_dispatch} (want CANCELLED)"
+
+    def teardown(self):
+        p = getattr(self, "_node", None)
+        if p:
+            try:
+                os.killpg(os.getpgid(p.pid), signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+        if getattr(self, "_truth", None):
+            shutil.rmtree(os.path.dirname(self._truth), ignore_errors=True)

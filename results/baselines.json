@@ -1,0 +1,218 @@
+[
+  {
+    "task": "task01",
+    "actor": "null",
+    "trials": 1,
+    "mean_graded_ratio": 0.0,
+    "pass_rate": 0.0,
+    "seed": "0"
+  },
+  {
+    "task": "task01",
+    "actor": "null",
+    "trials": 1,
+    "mean_graded_ratio": 0.0,
+    "pass_rate": 0.0,
+    "seed": "1"
+  },
+  {
+    "task": "task01",
+    "actor": "null",
+    "trials": 1,
+    "mean_graded_ratio": 0.0,
+    "pass_rate": 0.0,
+    "seed": "2"
+  },
+  {
+    "task": "task01",
+    "actor": "random",
+    "trials": 1,
+    "mean_graded_ratio": 0.0,
+    "pass_rate": 0.0,
+    "seed": "0"
+  },
+  {
+    "task": "task01",
+    "actor": "random",
+    "trials": 1,
+    "mean_graded_ratio": 0.0,
+    "pass_rate": 0.0,
+    "seed": "1"
+  },
+  {
+    "task": "task01",
+    "actor": "random",
+    "trials": 1,
+    "mean_graded_ratio": 0.0,
+    "pass_rate": 0.0,
+    "seed": "2"
+  },
+  {
+    "task": "task01",
+    "actor": "scripted",
+    "trials": 1,
+    "mean_graded_ratio": 1.0,
+    "pass_rate": 1.0,
+    "seed": "0"
+  },
+  {
+    "task": "task01",
+    "actor": "scripted",
+    "trials": 1,
+    "mean_graded_ratio": 1.0,
+    "pass_rate": 1.0,
+    "seed": "1"
+  },
+  {
+    "task": "task01",
+    "actor": "scripted",
+    "trials": 1,
+    "mean_graded_ratio": 1.0,
+    "pass_rate": 1.0,
+    "seed": "2"
+  },
+  {
+    "task": "task02",
+    "actor": "null",
+    "trials": 1,
+    "mean_graded_ratio": 0.0,
+    "pass_rate": 0.0,
+    "seed": "0"
+  },
+  {
+    "task": "task02",
+    "actor": "null",
+    "trials": 1,
+    "mean_graded_ratio": 0.0,
+    "pass_rate": 0.0,
+    "seed": "1"
+  },
+  {
+    "task": "task02",
+    "actor": "null",
+    "trials": 1,
+    "mean_graded_ratio": 0.0,
+    "pass_rate": 0.0,
+    "seed": "2"
+  },
+  {
+    "task": "task02",
+    "actor": "random",
+    "trials": 1,
+    "mean_graded_ratio": 0.0,
+    "pass_rate": 0.0,
+    "seed": "0"
+  },
+  {
+    "task": "task02",
+    "actor": "random",
+    "trials": 1,
+    "mean_graded_ratio": 0.0,
+    "pass_rate": 0.0,
+    "seed": "1"
+  },
+  {
+    "task": "task02",
+    "actor": "random",
+    "trials": 1,
+    "mean_graded_ratio": 0.0,
+    "pass_rate": 0.0,
+    "seed": "2"
+  },
+  {
+    "task": "task02",
+    "actor": "scripted",
+    "trials": 1,
+    "mean_graded_ratio": 1.0,
+    "pass_rate": 1.0,
+    "seed": "0"
+  },
+  {
+    "task": "task02",
+    "actor": "scripted",
+    "trials": 1,
+    "mean_graded_ratio": 1.0,
+    "pass_rate": 1.0,
+    "seed": "1"
+  },
+  {
+    "task": "task02",
+    "actor": "scripted",
+    "trials": 1,
+    "mean_graded_ratio": 1.0,
+    "pass_rate": 1.0,
+    "seed": "2"
+  },
+  {
+    "task": "task03",
+    "actor": "null",
+    "trials": 1,
+    "mean_graded_ratio": 0.0,
+    "pass_rate": 0.0,
+    "seed": "0"
+  },
+  {
+    "task": "task03",
+    "actor": "null",
+    "trials": 1,
+    "mean_graded_ratio": 0.0,
+    "pass_rate": 0.0,
+    "seed": "1"
+  },
+  {
+    "task": "task03",
+    "actor": "null",
+    "trials": 1,
+    "mean_graded_ratio": 0.0,
+    "pass_rate": 0.0,
+    "seed": "2"
+  },
+  {
+    "task": "task03",
+    "actor": "random",
+    "trials": 1,
+    "mean_graded_ratio": 0.0,
+    "pass_rate": 0.0,
+    "seed": "0"
+  },
+  {
+    "task": "task03",
+    "actor": "random",
+    "trials": 1,
+    "mean_graded_ratio": 0.0,
+    "pass_rate": 0.0,
+    "seed": "1"
+  },
+  {
+    "task": "task03",
+    "actor": "random",
+    "trials": 1,
+    "mean_graded_ratio": 0.0,
+    "pass_rate": 0.0,
+    "seed": "2"
+  },
+  {
+    "task": "task03",
+    "actor": "scripted",
+    "trials": 1,
+    "mean_graded_ratio": 1.0,
+    "pass_rate": 1.0,
+    "seed": "0"
+  },
+  {
+    "task": "task03",
+    "actor": "scripted",
+    "trials": 1,
+    "mean_graded_ratio": 1.0,
+    "pass_rate": 1.0,
+    "seed": "1"
+  },
+  {
+    "task": "task03",
+    "actor": "scripted",
+    "trials": 1,
+    "mean_graded_ratio": 1.0,
+    "pass_rate": 1.0,
+    "seed": "2"
+  }
+]

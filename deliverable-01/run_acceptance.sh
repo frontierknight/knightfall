@@ -25,10 +25,10 @@ ros2 security generate_artifacts -k "$KS" \
 echo "  enclaves: $(ls "$KS/enclaves" 2>/dev/null | tr '\n' ' ')"
 
 echo "== [Case A] legit: secured publisher + authorized maintenance listener =="
-ros2 run demo_nodes_cpp talker --ros-args \
+python3 "$HERE/diag_nodes.py" talker --ros-args \
   --enclave /diag_publisher -r __node:=diag_publisher -r chatter:=$TOPIC >/dev/null 2>&1 &
 PUB=$!
-ros2 run demo_nodes_cpp listener --ros-args \
+python3 "$HERE/diag_nodes.py" listener --ros-args \
   --enclave /maintenance_listener -r __node:=maintenance_listener -r chatter:=$TOPIC > "$OUT/legit.log" 2>&1 &
 LIS=$!
 sleep $RUN; kill $PUB $LIS 2>/dev/null; wait 2>/dev/null
@@ -36,12 +36,12 @@ LEGIT_HEARD=$(grep -c "I heard" "$OUT/legit.log")
 echo "  authorized listener heard: $LEGIT_HEARD msgs"
 
 echo "== [Case B] forbidden: unauthorized listener (no creds) on secured domain =="
-ros2 run demo_nodes_cpp talker --ros-args \
+python3 "$HERE/diag_nodes.py" talker --ros-args \
   --enclave /diag_publisher -r __node:=diag_publisher -r chatter:=$TOPIC >/dev/null 2>&1 &
 PUB2=$!
 # unauthorized: security DISABLED -> non-secure participant, rejected by the secured domain
 env ROS_SECURITY_ENABLE=false ROS_SECURITY_STRATEGY=Permissive \
-  ros2 run demo_nodes_cpp listener --ros-args -r __node:=attacker -r chatter:=$TOPIC > "$OUT/attacker.log" 2>&1 &
+  python3 "$HERE/diag_nodes.py" listener --ros-args -r __node:=attacker -r chatter:=$TOPIC > "$OUT/attacker.log" 2>&1 &
 ATK=$!
 sleep $RUN; kill $PUB2 $ATK 2>/dev/null; wait 2>/dev/null
 ATK_HEARD=$(grep -c "I heard" "$OUT/attacker.log")

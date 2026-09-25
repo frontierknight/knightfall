@@ -69,3 +69,34 @@ Secure ROS2 · ROS 2 threat model · embodied-AI security surveys (ACM CSUR 3806
 - Log full trajectories from day one (execution traces) — matches DeepRed and is the RL unit.
 - v1 scope stays small (3 tasks) but **the physical-impact task is the headline** — it's what no prior
   benchmark has; prioritize proving its propagation path (DESIGN §12 open question).
+
+## F. Prior ranges surveyed for the v2 architecture (2026-09-25)
+
+Goal of this pass: learn how existing ranges are *built and delivered* (containers, networks,
+visualization, reset, agent interface), to shape Knightfall's environment. Infrastructure only.
+
+| Range | Kind | What we take from it |
+|---|---|---|
+| **GRFICSv3** ([GitHub](https://github.com/Fortiphyd/GRFICSv3); v1: [USENIX ASE'18](https://www.usenix.org/conference/ase18/presentation/formby)) | ICS / chemical-plant cyber-physical lab | **Closest precedent.** Fully Docker-compose'd: 3D process sim, PLC, HMI, engineering workstation, player workstation, router/firewall each a container. **Two segmented zones** (process / enterprise) with a router controlling traffic. **The physical process is visualized in the browser** — the learner *sees* the physical consequence. Reset = `docker compose down --volumes`. Optional services behind compose profiles. |
+| **RCTF** — Robotics CTF, Alias Robotics ([GitHub](https://github.com/aliasrobotics/RCTF); [arXiv 1810.02690](https://arxiv.org/abs/1810.02690)) | Robot CTF (ROS / ROS 2) | The only direct robotics precedent. Scenarios in a **linear difficulty progression**, one repo + Docker image per scenario. **Archived (read-only) as of 2026-07** — there is currently no maintained open robotics range. No graded scoring, no agent interface, no physical-impact judging. |
+| **CTFd + ctfd-whale** ([GitHub](https://github.com/frankli0324/ctfd-whale)) | General CTF platform | **Per-player instance on demand**, **dynamic per-instance flag**, admin panel managing instance lifecycle. |
+| **CybORG / CAGE Challenge 4** ([CybORG](https://github.com/cage-challenge/CybORG); [CC4](https://github.com/cage-challenge/cage-challenge-4)) | Autonomous cyber-operations gym | **Agent-first interface** (PettingZoo), structured observation / action / reward, fixed episode length (500 steps), **evaluation over 100 randomized episodes**, public leaderboard. |
+| **Lichtblick** ([GitHub](https://github.com/lichtblick-suite/lichtblick)) | Open-source ROS visualization (Foxglove Studio fork) | Candidate off-the-shelf viewer via `foxglove_bridge`; kept as an option, but it cannot by itself enforce the judge/player data split (see DESIGN §13). |
+
+**Common pattern across these (the "standard parts" of a range):**
+1. **Zones on separate networks** — player, target, and judge/management are isolated by the
+   network, not by convention.
+2. **Visible physical process** (GRFICS) — seeing the consequence is the core learning experience
+   for cyber-physical ranges.
+3. **One-command up / one-command reset** (compose + volume teardown).
+4. **Independent instance + dynamic flag per player/run** (ctfd-whale).
+5. **Standard agent interface + multi-episode randomized evaluation** (CybORG).
+
+**Knightfall v1 vs this pattern:** 4 and 5 exist in embryo (per-round random flag; the uniform
+`Session` console). 1–3 are missing: everything runs in one container, and there is no
+visualization. DESIGN §13 closes this gap.
+
+**Positioning:** GRFICS proves the "containerized cyber-physical range + visible physics" model for
+ICS; RCTF proved robotics demand but is archived and never had graded / agent / physical-truth
+scoring. Knightfall = GRFICS-style delivery × RCTF's domain × CybORG-style agent evaluation, plus the
+physical-impact checkpoint.
