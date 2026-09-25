@@ -24,11 +24,12 @@ class FakeBackend:
         return f"ran {cmd}"
 
     def submit(self, value):
-        return value == "FLAG{x}"
+        self._solved = getattr(self, "_solved", False) or value == "FLAG{x}"
+        return self._solved
 
     def confirm_checkpoints(self):
         time.sleep(self.judge_delay)
-        return set()
+        return {"interface_op"} if getattr(self, "_solved", False) else set()
 
     def reset(self):
         pass
@@ -73,6 +74,18 @@ class SessionBudgetTest(unittest.TestCase):
         self.assertEqual(s.budget_left()["steps"], 0)
         s.finish()
 
+
+
+class AgentAdapterTest(unittest.TestCase):
+    def test_scripted_policy_drives_session_and_submits(self):
+        from agent_actor import drive, scripted_policy
+        b = FakeBackend()
+        out = os.path.join(tempfile.mkdtemp(), "a.jsonl")
+        s = Session(scenario(steps=10), b, "agent", "unit", out)
+        s.start()
+        res = drive(s, scripted_policy(["ros2 topic list", "submit FLAG{x}", "done"]))
+        self.assertIn("ros2 topic list", b.executed)
+        self.assertTrue(res["binary_pass"])          # correct submit hits interface_op
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
