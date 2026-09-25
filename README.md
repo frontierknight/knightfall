@@ -59,7 +59,7 @@ docker run --rm knightfall selftest all     # solvable: task01 1.0 · task02 1.9
 docker run --rm knightfall oracle           # defenses hold AND the mission still runs
 docker run --rm knightfall batch            # baselines: null 0 · random 0 · scripted pass
 docker run --rm -it knightfall play task01  # play it yourself
-docker run --rm -p 8000:8000 knightfall web  # replay console at http://127.0.0.1:8000
+docker run --rm -p 8000:8000 knightfall web  # console at http://127.0.0.1:8000  (/play to play live, / to replay)
 ```
 On a network that blocks `packages.ros.org`, build with `bash tools/cloud/docker-setup.sh`.
 Full reproduction steps, one command per claim, are in [`REPRODUCE.md`](REPRODUCE.md).

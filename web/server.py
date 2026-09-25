@@ -141,14 +141,19 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def _send_page(self, path):
+        try:
+            with open(path, "rb") as fh:
+                self._send(200, fh.read(), "text/html; charset=utf-8")
+        except OSError:
+            self._send(404, os.path.basename(path).encode() + b" not found", "text/plain")
+
     def do_GET(self):
         u = urlparse(self.path)
         if u.path in ("/", "/replay.html"):
-            try:
-                with open(PAGE, "rb") as fh:
-                    self._send(200, fh.read(), "text/html; charset=utf-8")
-            except OSError:
-                self._send(404, b"replay.html not found", "text/plain")
+            self._send_page(PAGE)
+        elif u.path in ("/play", "/play.html"):
+            self._send_page(os.path.join(HERE, "play.html"))
         elif u.path == "/api/trajectories":
             self._send(200, json.dumps(_list_trajectories()))
         elif u.path == "/api/trajectory":
