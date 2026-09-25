@@ -8,7 +8,14 @@ different deployment condition — so results stay comparable, and the same rang
 human players and AI security agents ([Crimson Knight](https://github.com/frontierknight/crimson) /
 [Azure Knight](https://github.com/frontierknight/azure)).
 
-> Status: **v1 runnable & Dockerized** — 2 challenges (SROS2 leak + physical spoof) run end-to-end through one console (human == agent), graded + trajectory-logged + fix-oracles; validated on real ROS 2 Humble. Next: agent adapter + more challenges. Versions lock as scope firms up.
+> Status: **3 challenges, Dockerized, CI-gated.** Access-control (SROS2 diagnostic leak),
+> authorization (maintenance over-privilege), and physical impact (localization spoofing) all run
+> end-to-end through one console (human == agent): graded 4-layer scoring, ground-truth isolation,
+> fix-oracles, enforced budgets, RL-ready trajectories, seeded per-round variation, a batch runner
+> with baselines, and a trajectory replay viewer. Validated on ROS 2 Humble; every claim is checked
+> in CI. Remaining: run real LLM agents (needs a model key) and the live web console. The v1
+> single-container layout is a *machinery demo*; benchmark-grade isolation lands with the
+> multi-container topology (see [`DESIGN.md`](DESIGN.md) §13–§14).
 
 ## What Knightfall is for (not just a paper)
 
@@ -47,26 +54,38 @@ an agent-facing interface are first-class, not afterthoughts.
 ```bash
 git clone https://github.com/frontierknight/knightfall && cd knightfall
 docker build -t knightfall .
-docker run --rm knightfall selftest all      # task01 1.0/1.0 · task03 2.5/2.5
-docker run --rm -it knightfall play task01    # play it yourself
+docker run --rm knightfall list             # the three challenges
+docker run --rm knightfall selftest all     # solvable: task01 1.0 · task02 1.9 · task03 2.5
+docker run --rm knightfall oracle           # defenses hold AND the mission still runs
+docker run --rm knightfall batch            # baselines: null 0 · random 0 · scripted pass
+docker run --rm -it knightfall play task01  # play it yourself
 ```
+On a network that blocks `packages.ros.org`, build with `bash tools/cloud/docker-setup.sh`.
+Full reproduction steps, one command per claim, are in [`REPRODUCE.md`](REPRODUCE.md).
 
-## Try it (self-check)
-见 [`QUICKSTART.md`](QUICKSTART.md) — 在 winbox WSL 上 `python3 run.py list / run task01 / run task03 / oracle`。
+## The three challenges
+| Task | Player role | Flaw class | Wins by |
+|---|---|---|---|
+| `task01` diagnostic leak | network participant, no creds | access control (SROS2) | reading the per-round secret |
+| `task02` maintenance over-privilege | maintenance identity | authorization (RBAC misconfig) | changing mission state unauthorized |
+| `task03` localization spoofing | controls a localization source | data integrity → physical motion | driving the TRUE robot off-target |
+
+## See a run
+[`web/replay.html`](web/replay.html) replays any scored trajectory: attacker console on the left,
+the four graded checkpoints and (for the physical task) the perceived-vs-true robot map on the right.
 
 ## Contents
-- [`RESEARCH.md`](RESEARCH.md) — 研究笔记：传统 CTF/range 做法 + ROS 2 特殊性 + 空白点/novelty + 引用清单（论文地基）。
-- [`DESIGN.md`](DESIGN.md) — full design: principles, three-zone architecture, layered scoring,
-  reset/timing, first three tasks, reuse stack, and the build order.
-- [`schema/scenario.schema.yaml`](schema/scenario.schema.yaml) — machine-readable spec every
-  challenge follows (attacker start · flaw · goal · budget · scoring · fix-oracle · reset · env).
-- [`scenarios/`](scenarios/) — concrete challenges. First: `01-diagnostic-leak.yaml`.
-
-## Build order (see DESIGN §11)
-1. ROS 2 comms + security-config sample (legit comms succeed; forbidden rejected)
-2. Task 1 + full run loop (human solves, agent attempts, scoring & reset trustworthy)
-3. Reference delivery robot + maintenance-over-privilege task
-4. Localization physical task + batch evaluation
+- [`PAPER.md`](PAPER.md) — submittable draft: abstract, related work, method, reproducibility, limits.
+- [`DESIGN.md`](DESIGN.md) — full design: principles, three-zone + multi-container architecture
+  (§13), layered scoring, and the decision log (§14).
+- [`RESEARCH.md`](RESEARCH.md) — traditional CTF/range practice + ROS 2 specifics + the gap/novelty +
+  a survey of prior ranges (§F) and citations.
+- [`REPRODUCE.md`](REPRODUCE.md) — one image, one command per claim.
+- [`docs/HUMAN_BASELINE.md`](docs/HUMAN_BASELINE.md) — protocol for a comparable human reference.
+- [`scenarios/`](scenarios/) — the challenge specs (the single source of truth, validated in CI).
+- [`harness/`](harness/) — the evaluation core: trajectory logger, graded judge, budget, batch
+  runner, agent adapter, provenance.
+- [`compose/`](compose/) — the multi-container skeleton and its discovery + isolation checks.
 
 ## Responsible use
 Fully simulated and isolated. Scenarios model misconfigurations for education and benchmarking —
