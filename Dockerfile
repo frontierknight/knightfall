@@ -15,6 +15,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       ros-humble-sros2 python3 \
     && rm -rf /var/lib/apt/lists/*
 
+# Provenance: bake the source revision so every trajectory records what produced it (audit M5).
+ARG KNIGHTFALL_GIT_SHA=unknown
+ENV KNIGHTFALL_GIT_SHA=${KNIGHTFALL_GIT_SHA}
+
 WORKDIR /knightfall
 COPY . /knightfall
 RUN chmod +x /knightfall/deliverable-01/run_acceptance.sh /knightfall/docker-entrypoint.sh 2>/dev/null || true

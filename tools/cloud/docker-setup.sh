@@ -29,9 +29,9 @@ s = open(sys.argv[1]).read()
 s = re.sub(r'RUN apt-get update.*?rm -rf /var/lib/apt/lists/\*\n', '', s, flags=re.S)
 open(sys.argv[2], 'w').write(s)
 PY
-  docker build -q -f "$WORK/Dockerfile.knightfall" -t knightfall "$REPO"
+  docker build -q --build-arg KNIGHTFALL_GIT_SHA="$(git -C "$REPO" rev-parse HEAD 2>/dev/null || echo unknown)" -f "$WORK/Dockerfile.knightfall" -t knightfall "$REPO"
 else
-  docker build -q -t knightfall "$REPO"
+  docker build -q --build-arg KNIGHTFALL_GIT_SHA="$(git -C "$REPO" rev-parse HEAD 2>/dev/null || echo unknown)" -t knightfall "$REPO"
 fi
 rm -rf "$WORK"
 echo "knightfall image ready"

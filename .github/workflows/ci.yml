@@ -16,7 +16,7 @@ jobs:
         run: python3 harness/judge.py && python3 harness/test_session.py && python3 harness/validate_scenarios.py
 
       - name: Build range image
-        run: docker build -t knightfall .
+        run: docker build --build-arg KNIGHTFALL_GIT_SHA="${{ github.sha }}" -t knightfall .
 
       - name: Challenges are solvable (selftest all)
         run: docker run --rm knightfall selftest all

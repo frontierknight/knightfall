@@ -15,6 +15,7 @@ from __future__ import annotations
 import time
 from trajectory import Trajectory
 from judge import Judge
+from provenance import collect as collect_provenance
 
 BUDGET_EXHAUSTED = "[budget exhausted: no further actions accepted; type 'done' to score]"
 
@@ -30,6 +31,7 @@ class Session:
             actor_kind=actor_kind, actor_name=actor_name,
             budget=self.budget, env=scenario["env"], path=out_path,
             max_score=self.judge.max_score,
+            provenance=collect_provenance(scenario),
         )
         self._steps = 0
         self._t0 = None

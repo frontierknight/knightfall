@@ -26,6 +26,7 @@ class Trajectory:
     env: dict                       # version record (ros_distro, rmw, sim, ...)
     path: str                       # output .jsonl path
     max_score: float = 1.0
+    provenance: dict = field(default_factory=dict)   # git sha, image digest, scenario hash, seed
     _step: int = field(default=0, init=False)
     _t0: float = field(default_factory=time.monotonic, init=False)
     _fh: object = field(default=None, init=False)
@@ -38,7 +39,7 @@ class Trajectory:
             "scenario_version": self.scenario_version,
             "actor": {"kind": self.actor_kind, "name": self.actor_name},
             "budget": self.budget, "env": self.env, "max_score": self.max_score,
-            "started_at": time.time(),
+            "provenance": self.provenance, "started_at": time.time(),
         })
         return self
 
