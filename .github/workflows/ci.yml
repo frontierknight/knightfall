@@ -24,5 +24,8 @@ jobs:
       - name: Fix-oracles hold (defense works, mission still runs)
         run: docker run --rm knightfall oracle
 
+      - name: Benchmark discriminates (null=0, scripted=pass)
+        run: docker run --rm --entrypoint bash knightfall -lc "source /opt/ros/humble/setup.bash && python3 harness/test_batch_sanity.py"
+
       - name: E1 multi-container skeleton (discovery + isolation)
         run: bash compose/e1_check.sh

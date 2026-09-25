@@ -6,6 +6,7 @@ Run on the ROS box (ROS 2 sourced):
     python3 run.py play <task>          # YOU play it: interactive attacker console -> score + trajectory
     python3 run.py selftest [task|all]  # scripted smoke test (proves solvable + machinery)
     python3 run.py oracle               # fix-oracles: defense blocks attack AND keeps the mission
+    python3 run.py batch [args]         # run baselines x challenges -> comparable results table
 
 <task> ∈ { task01, task03 }.  Every session (human / agent / selftest) writes a trajectory.
 """
@@ -40,5 +41,7 @@ if __name__ == "__main__":
         _exec("selftest.py", sys.argv[2] if len(sys.argv) > 2 else "all")
     elif cmd == "oracle":
         _exec("run_fix_oracles.py")
+    elif cmd == "batch":
+        _exec("batch.py", *sys.argv[2:])
     else:
         print(__doc__); sys.exit(2)
