@@ -330,3 +330,20 @@ scenario (CybORG-style).
 | E5 | Trajectory replay in the web console | any JSONL in `trajectories/` replays end-to-end |
 | E6 | Task02 on the shared world | fix-oracle passes; mission timeline shown |
 | E7 | Batch runner (N episodes × scenarios) + results table | one command reproduces a multi-episode table |
+
+## 14. Decision log (autonomous build)
+
+The owner delegated all calls to the autonomous build (2026-09-25) with one rule: keep moving.
+This log records each significant decision so the reasoning is auditable; the T0 audit
+(PR #1) drove most of them.
+
+| # | Decision | Why |
+|---|---|---|
+| D1 | Build order: E0 CI → E1 → E2 (integrity) → E6 task02 → E7 batch+baselines → E3–E5 UI. | Correctness and comparability are what a paper needs first; the web UI is presentation and comes last. |
+| D2 | Ground truth is kept off the DDS graph. The sim writes true pose + recorded events to a judge-only file; the multi-container design (§13) later moves this to a truth network. | The player shares the robot's DDS graph, so any ground-truth topic is visible and forgeable (audit B1). |
+| D3 | Checkpoints are computed only from events the sim/robot record and latch, never from the player's command text. | Command-text matching gives false positives and negatives and is not ground truth (audit B3). |
+| D4 | The scenario YAML is the single source of truth; the registry loads it and CI validates it. | The registry and YAML had drifted apart (audit M6). |
+| D5 | The budget is enforced in `Session`; judge-side time is excluded from the player's clock; every trajectory records provenance (git SHA, image digest, scenario hash, seed). | The budget was never enforced and runs were not reproducible (audit B4/M5). |
+| D6 | v1 scores are labelled a machinery demo, not benchmark data, until the integrity fixes (E2) and the container split (E1→E2) are complete. | Under v1 the player's shell is the judge's container as root (audit B2); results are not trustworthy yet. |
+
+Discovery mode, isolation model and hardening for the container split are recorded in §13.3–§13.4.
