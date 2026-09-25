@@ -16,6 +16,8 @@ import time
 from trajectory import Trajectory
 from judge import Judge
 
+BUDGET_EXHAUSTED = "[budget exhausted: no further actions accepted; type 'done' to score]"
+
 
 class Session:
     def __init__(self, scenario: dict, backend, actor_kind: str, actor_name: str, out_path: str):
@@ -31,6 +33,7 @@ class Session:
         )
         self._steps = 0
         self._t0 = None
+        self._judge_s = 0.0       # time spent in judge-side checks; not charged to the player
         self._open = False
 
     def start(self):
@@ -41,40 +44,51 @@ class Session:
         self._t0 = time.monotonic()
         return self.backend.briefing(), None
 
-    def budget_left(self):
-        used_steps = self._steps
-        used_time = time.monotonic() - self._t0 if self._t0 else 0
-        return {"steps": self.budget.get("steps", 0) - used_steps,
-                "wall_clock_s": round(self.budget.get("wall_clock_s", 0) - used_time, 1)}
+    def _player_time(self):
+        """Wall-clock seconds charged to the player (judge-side check time excluded)."""
+        return (time.monotonic() - self._t0 - self._judge_s) if self._t0 else 0.0
 
-    def _over_budget(self):
+    def budget_left(self):
+        return {"steps": max(0, self.budget.get("steps", 0) - self._steps),
+                "wall_clock_s": max(0.0, round(self.budget.get("wall_clock_s", 0) - self._player_time(), 1))}
+
+    def over_budget(self) -> bool:
         if self._steps >= self.budget.get("steps", 10**9):
             return True
-        if self._t0 and (time.monotonic() - self._t0) >= self.budget.get("wall_clock_s", 10**9):
-            return True
-        return False
+        return self._player_time() >= self.budget.get("wall_clock_s", 10**9)
+
+    def _checkpoints(self):
+        t = time.monotonic()
+        try:
+            return sorted(self.backend.confirm_checkpoints())
+        finally:
+            self._judge_s += time.monotonic() - t
 
     def run_command(self, cmd: str) -> str:
-        """Run one action in the attacker terminal; log it; return the observation."""
+        """Run one action in the attacker terminal; log it; return the observation.
+        Refused (not executed, not logged as a step) once the budget is exhausted."""
+        if self.over_budget():
+            return BUDGET_EXHAUSTED
         obs = self.backend.exec_action(cmd)
         self._steps += 1
-        hit = sorted(self.backend.confirm_checkpoints())
-        self._traj.step(action={"cmd": cmd}, observation=obs[:2000], checkpoints_hit=hit)
+        self._traj.step(action={"cmd": cmd}, observation=obs, checkpoints_hit=self._checkpoints())
         return obs
 
     def submit(self, value: str) -> bool:
+        if self.over_budget():
+            return False
         ok = self.backend.submit(value) if hasattr(self.backend, "submit") else False
         self._steps += 1
-        hit = sorted(self.backend.confirm_checkpoints())
-        self._traj.step(action={"submit": value}, observation=f"accepted={ok}", checkpoints_hit=hit)
+        self._traj.step(action={"submit": value}, observation=f"accepted={ok}",
+                        checkpoints_hit=self._checkpoints())
         return ok
 
     def finish(self) -> dict:
-        confirmed = self.backend.confirm_checkpoints()
+        confirmed = self._checkpoints()
         res = self.judge.score(confirmed)
         outcome = "success" if res["binary_pass"] else "fail"
-        used = {"steps": self._steps,
-                "wall_clock_s": round(time.monotonic() - self._t0, 1) if self._t0 else 0}
+        used = {"steps": self._steps, "wall_clock_s": round(self._player_time(), 1),
+                "judge_s": round(self._judge_s, 1), "exhausted": self.over_budget()}
         if self._open:
             self._traj.result(final_score=res["graded_score"], outcome=outcome,
                               checkpoints=res["breakdown"], budget_used=used)

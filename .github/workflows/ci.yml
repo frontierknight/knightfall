@@ -12,8 +12,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Judge self-test (pure stdlib)
-        run: python3 harness/judge.py
+      - name: Harness unit tests (pure stdlib)
+        run: python3 harness/judge.py && python3 harness/test_session.py
 
       - name: Build range image
         run: docker build -t knightfall .
