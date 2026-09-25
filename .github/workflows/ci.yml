@@ -23,3 +23,6 @@ jobs:
 
       - name: Fix-oracles hold (defense works, mission still runs)
         run: docker run --rm knightfall oracle
+
+      - name: E1 multi-container skeleton (discovery + isolation)
+        run: bash compose/e1_check.sh

@@ -286,9 +286,13 @@ reset = recreate `robot` + `sim` + `player` (+ volumes) per round.
 ### 13.4 ROS 2-specific constraints (design inputs, some to validate)
 - **`ROS_DOMAIN_ID` is a logical partition, not a security boundary.** v1's zone separation by
   domain ID is replaced by Docker network separation.
-- **DDS discovery across containers — to validate first.** Default discovery uses multicast; must
-  test it across a user-defined Docker bridge network. Fallback: Fast DDS discovery server or static
-  initial peers. Pin the chosen mode in the scenario `env.discovery`.
+- **DDS discovery across containers — validated in E1 (2026-09-25).** Default multicast discovery
+  did **not** cross containers on a user-defined bridge network (the player saw only `/rosout` and
+  `/parameter_events`). Adopted: a **Fast DDS discovery server** container at a static IP
+  (`ROS_DISCOVERY_SERVER=172.28.0.10:11811`; hostnames are rejected by Humble's Fast DDS), started
+  with the `fast-discovery-server` binary (the `fastdds discovery` wrapper can't find it in
+  ros-base), plus `ROS_SUPER_CLIENT=TRUE` so the ros2 CLI sees the full graph. Scenario
+  `env.discovery` = `discovery-server`. See `compose/docker-compose.yml`, `compose/e1_check.sh`.
 - **SROS2 keystore is scenario state**: generated per round, mounted into `robot` (and into
   `player` only when the scenario grants the player an identity), destroyed on reset.
 - **Ground truth off the DDS graph**: exporting it over a plain socket on judge_net avoids having to

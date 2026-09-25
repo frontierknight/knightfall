@@ -1,0 +1,50 @@
+# Knightfall v2 skeleton (DESIGN §13, step E1): one container per zone, separate networks.
+# robot  : ROS 2 graph (here: the deterministic sim) on robot_net
+# player : terminal environment, robot_net only
+# judge  : truth_net only (no path to robot_net / player)
+# Run:  docker compose -f compose/docker-compose.yml up -d   (image: knightfall, built from ../Dockerfile)
+name: knightfall
+
+x-ros: &ros
+  image: knightfall
+  entrypoint: ["bash", "-lc"]
+  environment:
+    ROS_DOMAIN_ID: "0"
+    # Multicast discovery does not cross containers here (E1 finding), so every participant
+    # uses a Fast DDS discovery server; ROS_SUPER_CLIENT lets the ros2 CLI see the full graph.
+    ROS_DISCOVERY_SERVER: "172.28.0.10:11811"   # static IP: Fast DDS here rejects hostnames
+    ROS_SUPER_CLIENT: "TRUE"
+
+services:
+  discovery:
+    <<: *ros
+    command: ["source /opt/ros/humble/setup.bash && exec fast-discovery-server -i 0 -l 172.28.0.10 -p 11811"]
+    networks:
+      robot_net:
+        ipv4_address: 172.28.0.10
+
+  robot:
+    <<: *ros
+    command: ["source /opt/ros/humble/setup.bash && exec python3 /knightfall/challenges/physical_sim.py"]
+    networks: [robot_net]
+
+  player:
+    <<: *ros
+    command: ["sleep infinity"]
+    networks: [robot_net]
+
+  judge:
+    <<: *ros
+    # canary listener: lets the isolation check tell "unreachable" apart from "nothing listening"
+    command: ["exec python3 -m http.server 8080"]
+    networks: [truth_net]
+
+networks:
+  robot_net:
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.28.0.0/24
+          ip_range: 172.28.0.128/25   # dynamic IPs stay clear of the static discovery address
+  truth_net:
+    internal: true
