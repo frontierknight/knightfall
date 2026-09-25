@@ -36,7 +36,7 @@ if __name__ == "__main__":
     if cmd == "list":
         do_list()
     elif cmd == "play" and len(sys.argv) > 2:
-        _exec("play.py", sys.argv[2])
+        _exec("play.py", *sys.argv[2:])
     elif cmd == "selftest":
         _exec("selftest.py", sys.argv[2] if len(sys.argv) > 2 else "all")
     elif cmd == "oracle":
