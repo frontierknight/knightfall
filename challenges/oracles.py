@@ -9,7 +9,7 @@ task03: the patch = a localization integrity check (physical_sim with KNIGHTFALL
         reaches the goal anyway -> attack blocked AND mission still works.
 """
 from __future__ import annotations
-import math, os, re, signal, subprocess, sys, time
+import json, math, os, re, shutil, signal, subprocess, sys, tempfile, time
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "harness"))
 from fix_oracle import FixOracle  # noqa: E402
@@ -49,10 +49,12 @@ class Task03FixOracle(FixOracle):
     DEV_THRESHOLD = 1.0
 
     def apply_patch(self):
-        # hardened sim: integrity check ignores /loc_spoof
+        # hardened sim: integrity check ignores /loc_spoof. Ground truth is read from the
+        # judge-only truth file (min distance the TRUE pose got to the goal), not DDS.
+        self._truth = os.path.join(tempfile.mkdtemp(prefix="kf-oracle-truth-"), "truth.json")
         full = (f"source {ROS_SETUP}; export ROS_DOMAIN_ID={self.DOMAIN}; "
                 f"KNIGHTFALL_HARDENED=1 GOAL_X={self.GOAL[0]} GOAL_Y={self.GOAL[1]} "
-                f"python3 {HERE}/physical_sim.py")
+                f"KNIGHTFALL_TRUTH_FILE={self._truth} python3 {HERE}/physical_sim.py")
         self._sim = subprocess.Popen(["bash", "-lc", full], stdout=subprocess.DEVNULL,
                                      stderr=subprocess.DEVNULL, preexec_fn=os.setsid)
         time.sleep(4)
@@ -62,21 +64,26 @@ class Task03FixOracle(FixOracle):
         self._pub = subprocess.Popen(["bash", "-lc", full2], stdout=subprocess.DEVNULL,
                                      stderr=subprocess.DEVNULL, preexec_fn=os.setsid)
         time.sleep(16)                                # let it navigate under the (ignored) spoof
-        self._gt = self._true_pose()
-        self._dist = math.hypot(self.GOAL[0] - self._gt[0], self.GOAL[1] - self._gt[1]) if self._gt else 99.0
+        gt = self._read_truth()
+        # where the TRUE robot ended up; small => the (ignored) spoof did not move it off goal
+        if gt:
+            tx, ty = gt.get("true", (99.0, 99.0))
+            self._dist = math.hypot(self.GOAL[0] - tx, self.GOAL[1] - ty)
+        else:
+            self._dist = 99.0
 
-    def _true_pose(self):
-        r = _sh("timeout 6 ros2 topic echo /ground_truth/pose --once", self.DOMAIN,
-                capture_output=True, text=True, timeout=12)
-        xs = [float(l.split(":")[1]) for l in r.stdout.splitlines() if l.strip().startswith("x:")]
-        ys = [float(l.split(":")[1]) for l in r.stdout.splitlines() if l.strip().startswith("y:")]
-        return (xs[0], ys[0]) if xs and ys else None
+    def _read_truth(self):
+        try:
+            with open(self._truth) as fh:
+                return json.load(fh)
+        except (OSError, ValueError, TypeError):
+            return None
 
     def attack_blocked(self):
-        return self._dist <= self.DEV_THRESHOLD, f"true deviation under spoof = {round(self._dist,2)} m (want <= {self.DEV_THRESHOLD})"
+        return self._dist <= self.DEV_THRESHOLD, f"closest TRUE approach to goal under spoof = {round(self._dist,2)} m (want <= {self.DEV_THRESHOLD})"
 
     def mission_still_works(self):
-        return self._dist < 0.15, f"reached goal (deviation {round(self._dist,2)} m, want < 0.15)"
+        return self._dist < 0.15, f"robot reached goal (closest {round(self._dist,2)} m, want < 0.15)"
 
     def teardown(self):
         for p in (getattr(self, "_pub", None), getattr(self, "_sim", None)):
@@ -85,3 +92,5 @@ class Task03FixOracle(FixOracle):
                     os.killpg(os.getpgid(p.pid), signal.SIGTERM)
                 except ProcessLookupError:
                     pass
+        if getattr(self, "_truth", None):
+            shutil.rmtree(os.path.dirname(self._truth), ignore_errors=True)
