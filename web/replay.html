@@ -381,6 +381,30 @@ document.getElementById("file").addEventListener("change",ev=>{
   r.readAsText(f);
 });
 
+// Progressive enhancement: when served by web/server.py, offer the range's real trajectories.
+// When opened as a static file this fetch fails and we keep the samples + file drop unchanged.
+(function tryLive(){
+  fetch("/api/trajectories").then(r => r.ok ? r.json() : Promise.reject()).then(list => {
+    if(!Array.isArray(list) || !list.length) return;
+    const sel = document.createElement("select");
+    sel.className = "btn"; sel.title = "load a recorded run from this range";
+    sel.innerHTML = '<option value="">live runs…</option>' + list.map(t =>
+      `<option value="${esc(t.name)}">${esc(t.scenario)} · ${esc(String(t.outcome||"?"))} `+
+      `${t.score!=null?`(${t.score}/${t.max})`:""} — ${esc(t.name)}</option>`).join("");
+    sel.onchange = () => {
+      if(!sel.value) return;
+      fetch("/api/trajectory?name=" + encodeURIComponent(sel.value))
+        .then(r => r.text()).then(txt => {
+          const recs = txt.split(/\r?\n/).filter(Boolean).map(l => JSON.parse(l));
+          [...sc.children].forEach(c => c.setAttribute("aria-pressed","false"));
+          document.getElementById("fileName").textContent = sel.value + " (live)";
+          stop(); loadRecords(recs);
+        }).catch(() => { document.getElementById("fileName").textContent = "could not load " + sel.value; });
+    };
+    document.getElementById("samples").appendChild(sel);
+  }).catch(() => {});
+})();
+
 // boot on task03 (the physical differentiator)
 loadRecords(SAMPLES.task03);
 </script>

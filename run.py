@@ -7,6 +7,7 @@ Run on the ROS box (ROS 2 sourced):
     python3 run.py selftest [task|all]  # scripted smoke test (proves solvable + machinery)
     python3 run.py oracle               # fix-oracles: defense blocks attack AND keeps the mission
     python3 run.py batch [args]         # run baselines x challenges -> comparable results table
+    python3 run.py web                  # serve the replay console at http://127.0.0.1:8000
 
 <task> ∈ { task01, task03 }.  Every session (human / agent / selftest) writes a trajectory.
 """
@@ -45,5 +46,7 @@ if __name__ == "__main__":
         _exec("batch.py", *sys.argv[2:])
     elif cmd == "measure":
         _exec("measure_determinism.py", *sys.argv[2:])
+    elif cmd == "web":
+        sys.exit(subprocess.run([sys.executable, os.path.join(HERE, "web", "server.py"), *sys.argv[2:]]).returncode)
     else:
         print(__doc__); sys.exit(2)
