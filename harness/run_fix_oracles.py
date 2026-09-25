@@ -8,11 +8,11 @@ sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(HERE, "..", "challenges"))
 
 from fix_oracle import run_oracle, report          # noqa: E402
-from oracles import Task01FixOracle, Task03FixOracle  # noqa: E402
+from oracles import Task01FixOracle, Task02FixOracle, Task03FixOracle  # noqa: E402
 
 if __name__ == "__main__":
     allpass = True
-    for O in (Task01FixOracle, Task03FixOracle):
+    for O in (Task01FixOracle, Task02FixOracle, Task03FixOracle):
         res = run_oracle(O())
         print(report(res)); print()
         allpass = allpass and res["fix_oracle_pass"]

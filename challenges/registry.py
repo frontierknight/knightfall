@@ -13,6 +13,7 @@ import yaml
 
 sys.path.insert(0, os.path.dirname(__file__))
 from task01_diagnostic_leak import DiagnosticLeakBackend
+from task02_maintenance_overprivilege import MaintenanceOverprivilegeBackend
 from task03_localization_spoof import LocalizationSpoofBackend
 
 SCENARIO_DIR = os.path.join(os.path.dirname(__file__), "..", "scenarios")
@@ -20,6 +21,7 @@ SCENARIO_DIR = os.path.join(os.path.dirname(__file__), "..", "scenarios")
 # task key (CLI handle) -> (scenario id in YAML, backend class)
 _BACKENDS = {
     "task01": ("01-diagnostic-leak", DiagnosticLeakBackend),
+    "task02": ("02-maintenance-overprivilege", MaintenanceOverprivilegeBackend),
     "task03": ("03-localization-spoof", LocalizationSpoofBackend),
 }
 

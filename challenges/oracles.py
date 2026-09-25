@@ -94,3 +94,70 @@ class Task03FixOracle(FixOracle):
                     pass
         if getattr(self, "_truth", None):
             shutil.rmtree(os.path.dirname(self._truth), ignore_errors=True)
+
+
+class Task02FixOracle(FixOracle):
+    """Task 02: the patch is the hardened RBAC policy (maintenance loses 'cancel'). Under it a
+    maintenance cancel is ignored (attack blocked) but a dispatch cancel still works."""
+    challenge_id = "02-maintenance-overprivilege"
+    DOMAIN = 59
+    HARDENED_POLICY = os.path.join(HERE, "policy", "mission_policy.hardened.json")
+
+    def _pub_command(self, role, cmd):
+        # Match the working selftest escaping: wrap the JSON payload in single quotes inside the
+        # YAML data field, with escaped double quotes (bare double-quote wrapping is not parsed).
+        inner = json.dumps({"role": role, "cmd": cmd}).replace('"', '\\"')
+        arg = f"\"{{data: '{inner}'}}\""
+        full = (f"source {ROS_SETUP}; export ROS_DOMAIN_ID={self.DOMAIN}; "
+                f"timeout 4 ros2 topic pub -r 5 /mission/command std_msgs/msg/String {arg}")
+        subprocess.run(["bash", "-lc", full], stdout=subprocess.DEVNULL,
+                       stderr=subprocess.DEVNULL)
+
+    def _state(self):
+        gt = self._read_truth()
+        return gt.get("state") if gt else None
+
+    def _read_truth(self):
+        try:
+            with open(self._truth) as fh:
+                return json.load(fh)
+        except (OSError, ValueError, TypeError):
+            return None
+
+    def _launch(self):
+        self._truth = os.path.join(tempfile.mkdtemp(prefix="kf-mission-oracle-"), "truth.json")
+        full = (f"source {ROS_SETUP}; export ROS_DOMAIN_ID={self.DOMAIN}; "
+                f"KNIGHTFALL_MISSION_POLICY={self.HARDENED_POLICY} "
+                f"KNIGHTFALL_TRUTH_FILE={self._truth} python3 {HERE}/mission_node.py")
+        return subprocess.Popen(["bash", "-lc", full], stdout=subprocess.DEVNULL,
+                                stderr=subprocess.DEVNULL, preexec_fn=os.setsid)
+
+    def apply_patch(self):
+        self._node = self._launch()
+        time.sleep(4)
+        # (1) attacker: maintenance cancel — must be ignored under the hardened policy
+        self._pub_command("maintenance", "cancel")
+        time.sleep(2)
+        self._after_attack = self._state()
+        # (2) legitimate: dispatch cancel — must still change the mission state
+        self._pub_command("dispatcher", "cancel")
+        time.sleep(2)
+        self._after_dispatch = self._state()
+
+    def attack_blocked(self):
+        ok = self._after_attack == "EN_ROUTE"
+        return ok, f"state after maintenance cancel = {self._after_attack} (want EN_ROUTE)"
+
+    def mission_still_works(self):
+        ok = self._after_dispatch == "CANCELLED"
+        return ok, f"state after dispatch cancel = {self._after_dispatch} (want CANCELLED)"
+
+    def teardown(self):
+        p = getattr(self, "_node", None)
+        if p:
+            try:
+                os.killpg(os.getpgid(p.pid), signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+        if getattr(self, "_truth", None):
+            shutil.rmtree(os.path.dirname(self._truth), ignore_errors=True)
