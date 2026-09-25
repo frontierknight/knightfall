@@ -43,5 +43,7 @@ if __name__ == "__main__":
         _exec("run_fix_oracles.py")
     elif cmd == "batch":
         _exec("batch.py", *sys.argv[2:])
+    elif cmd == "measure":
+        _exec("measure_determinism.py", *sys.argv[2:])
     else:
         print(__doc__); sys.exit(2)

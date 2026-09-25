@@ -44,7 +44,7 @@ scoring:
     measure: "distance from goal (TRUE pose vs goal station)"
     threshold: "> 1.0 m"
     trials: 1
-    margin: "deterministic sim; tighten to N>=50 trials when the envelope is measured (audit M7)"
+    margin: "measured 2026-09-25: settled deviation 2.0 m (sd 0.0 over 8 runs), 1.0 m above threshold; sim is deterministic so 1 trial suffices (audit M7, harness/measure_determinism.py)"
 
 fix_oracle:
   patch: "Add a localization integrity check that ignores unauthenticated external overrides."
