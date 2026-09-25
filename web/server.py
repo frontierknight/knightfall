@@ -19,6 +19,8 @@ Env:  KNIGHTFALL_WEB_HOST (default 127.0.0.1), KNIGHTFALL_WEB_PORT (default 8000
 from __future__ import annotations
 import json
 import os
+import sys
+import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 
@@ -26,6 +28,63 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.join(HERE, "..")
 TRAJ_DIR = os.path.join(REPO, "trajectories")
 PAGE = os.path.join(HERE, "replay.html")
+sys.path.insert(0, os.path.join(REPO, "harness"))
+sys.path.insert(0, os.path.join(REPO, "challenges"))
+from session import Session  # noqa: E402
+
+
+class SessionManager:
+    """Drives live challenge sessions server-side so a browser can play one (E4 core).
+
+    `make` is injectable (defaults to the challenge registry) so this is unit-testable without ROS:
+    a test passes a fake make() returning (scenario, fake_backend). Each browser session is one
+    harness Session, keyed by an opaque id; ground truth stays server-side, never sent to the client
+    beyond the confirmed checkpoint names.
+    """
+
+    def __init__(self, make=None):
+        self._make = make
+        self._sessions = {}
+
+    def _resolve_make(self):
+        if self._make:
+            return self._make
+        from registry import make  # imported lazily; only needed for real play
+        return make
+
+    def start(self, task):
+        scenario, backend = self._resolve_make()(task)
+        sid = uuid.uuid4().hex
+        out = os.path.join(TRAJ_DIR, f"{scenario['id']}_web_{sid[:8]}.jsonl")
+        s = Session(scenario, backend, actor_kind="human", actor_name=f"web:{sid[:8]}", out_path=out)
+        briefing, err = s.start()
+        if err:
+            return {"error": err}
+        self._sessions[sid] = s
+        return {"id": sid, "scenario": scenario["id"], "briefing": briefing,
+                "budget_left": s.budget_left()}
+
+    def action(self, sid, cmd):
+        s = self._sessions.get(sid)
+        if not s:
+            return {"error": "unknown session"}
+        obs = s.run_command(cmd)
+        return {"observation": obs, "checkpoints": sorted(s.backend.confirm_checkpoints()),
+                "budget_left": s.budget_left(), "over_budget": s.over_budget()}
+
+    def submit(self, sid, value):
+        s = self._sessions.get(sid)
+        if not s:
+            return {"error": "unknown session"}
+        ok = s.submit(value)
+        return {"accepted": ok, "checkpoints": sorted(s.backend.confirm_checkpoints()),
+                "budget_left": s.budget_left(), "over_budget": s.over_budget()}
+
+    def finish(self, sid):
+        s = self._sessions.pop(sid, None)
+        if not s:
+            return {"error": "unknown session"}
+        return s.finish()
 
 
 def _list_trajectories():
@@ -103,8 +162,36 @@ class Handler(BaseHTTPRequestHandler):
         else:
             self._send(404, json.dumps({"error": "not found"}))
 
+    def do_POST(self):
+        u = urlparse(self.path)
+        routes = {
+            "/api/session/start":  lambda b: MANAGER.start(b.get("task", "")),
+            "/api/session/action": lambda b: MANAGER.action(b.get("id", ""), b.get("cmd", "")),
+            "/api/session/submit": lambda b: MANAGER.submit(b.get("id", ""), b.get("value", "")),
+            "/api/session/finish": lambda b: MANAGER.finish(b.get("id", "")),
+        }
+        fn = routes.get(u.path)
+        if not fn:
+            self._send(404, json.dumps({"error": "not found"}))
+            return
+        try:
+            n = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(n) or "{}") if n else {}
+            if not isinstance(body, dict):
+                raise ValueError("body must be an object")
+        except (ValueError, OSError):
+            self._send(400, json.dumps({"error": "bad request body"}))
+            return
+        try:
+            self._send(200, json.dumps(fn(body)))
+        except Exception as e:  # noqa: BLE001 - report, don't crash the server
+            self._send(500, json.dumps({"error": str(e)}))
+
     def log_message(self, *a):
         pass  # quiet
+
+
+MANAGER = SessionManager()
 
 
 def main():
