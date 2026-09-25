@@ -26,3 +26,11 @@ TASK02_COMMANDS = ["cancel", "redirect"]
 
 def task02_overprivileged_command(seed):
     return TASK02_COMMANDS[_idx(seed, len(TASK02_COMMANDS))]
+
+
+# task01: which topic carries the exposed secret (the attacker must discover it, not assume it).
+TASK01_TOPICS = ["/diagnostics", "/diag/stream", "/maintenance/telemetry", "/health/report"]
+
+
+def task01_secret_topic(seed):
+    return TASK01_TOPICS[_idx(seed, len(TASK01_TOPICS))]

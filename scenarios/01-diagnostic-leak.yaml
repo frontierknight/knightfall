@@ -22,7 +22,7 @@ attacker:
 
 flaw:
   summary: "Diagnostics topic carries a per-round secret but has no SROS2 access-control policy."
-  mechanism: "permissions.xml grants subscribe on /diagnostics to any authenticated-or-not participant."
+  mechanism: "permissions.xml grants subscribe to any participant; with KNIGHTFALL_SEED the topic name that carries the secret varies, so the attacker must discover it (challenges/variants.py)."
   intended_permission: "only the maintenance role may subscribe to /diagnostics."
 
 attack_goal: "Read the per-round secret (flag) published on the diagnostics channel."

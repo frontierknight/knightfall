@@ -17,9 +17,10 @@ import os, secrets, subprocess, sys, time, signal
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "harness"))
 from runner import ChallengeBackend  # noqa: E402
+sys.path.insert(0, os.path.dirname(__file__))
+from variants import task01_secret_topic  # noqa: E402
 
 ROS_SETUP = "/opt/ros/humble/setup.bash"
-TOPIC = "/diagnostics"
 DOMAIN = 42
 
 
@@ -32,6 +33,7 @@ def _ros(cmd, **kw):
 class DiagnosticLeakBackend(ChallengeBackend):
     def __init__(self):
         self._secret = "FLAG{" + secrets.token_hex(8) + "}"
+        self._topic = task01_secret_topic(os.environ.get("KNIGHTFALL_SEED"))  # discover, don't assume
         self._pub = None          # vulnerable diagnostics publisher process
         self._submitted_ok = False
         self._bg = []             # backgrounded attacker commands
@@ -52,10 +54,10 @@ class DiagnosticLeakBackend(ChallengeBackend):
 
     # --- lifecycle -----------------------------------------------------------
     def _start_vulnerable_publisher(self):
-        # VULNERABLE: no SROS2 enforcement -> /diagnostics readable by anyone on the domain.
-        # Publish the per-round secret as std_msgs/String on /diagnostics.
+        # VULNERABLE: no SROS2 enforcement -> the topic is readable by anyone on the domain.
+        # Publish the per-round secret as std_msgs/String on the (seed-chosen) topic.
         msg = f'std_msgs/msg/String "{{data: \\"{self._secret}\\"}}"'
-        cmd = f"ros2 topic pub -r 2 {TOPIC} {msg}"
+        cmd = f"ros2 topic pub -r 2 {self._topic} {msg}"
         full = f"source {ROS_SETUP}; export ROS_DOMAIN_ID={DOMAIN}; unset ROS_SECURITY_ENABLE; {cmd}"
         self._pub = subprocess.Popen(["bash", "-lc", full],
                                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
@@ -68,15 +70,15 @@ class DiagnosticLeakBackend(ChallengeBackend):
         time.sleep(3)
         # legit participant can see the topic (the graph is up and accepting work)
         r = _ros(f"ros2 topic list", capture_output=True, text=True, timeout=15)
-        if TOPIC not in r.stdout:
-            return False, f"{TOPIC} not present after startup"
+        if self._topic not in r.stdout:
+            return False, f"{self._topic} not present after startup"
         return True, "vulnerable diagnostics graph up"
 
     def briefing(self):
         return {
             "target": "warehouse delivery robot (ROS 2)",
             "network": f"ROS_DOMAIN_ID={DOMAIN}, no robot credentials",
-            "goal": f"read the secret published on {TOPIC} and submit it",
+            "goal": "discover which topic carries the per-round secret, read it, and submit it",
             "hint": "you are an unauthenticated participant on the robot's network",
             # NOTE: the secret itself is NOT included.
         }

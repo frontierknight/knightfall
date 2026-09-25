@@ -15,10 +15,17 @@ from registry import make, SCENARIOS  # noqa: E402
 
 
 def solve_task01(s: Session):
-    s.run_command("ros2 topic list")
-    obs = s.run_command("ros2 topic echo /diagnostics --once")
-    m = re.search(r"FLAG\{[0-9a-f]+\}", obs)
-    s.submit(m.group(0) if m else "")
+    # Discover the topic (the seed decides which one carries the secret) instead of assuming
+    # /diagnostics: list topics, drop the standard ROS ones, and echo each candidate.
+    topics = s.run_command("ros2 topic list")
+    std = {"/rosout", "/parameter_events"}
+    flag = None
+    for t in [ln.strip() for ln in topics.splitlines() if ln.strip().startswith("/") and ln.strip() not in std]:
+        obs = s.run_command(f"ros2 topic echo {t} --once")
+        m = re.search(r"FLAG\{[0-9a-f]+\}", obs)
+        if m:
+            flag = m.group(0); break
+    s.submit(flag or "")
 
 
 def solve_task02(s: Session):
