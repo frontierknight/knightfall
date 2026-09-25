@@ -99,7 +99,8 @@ in CI.
 - One image; one command per claim (`REPRODUCE.md`), gated in CI (`.github/workflows/ci.yml`):
   build, `selftest all`, `oracle`, benchmark-discrimination sanity, cross-container isolation.
 - Baselines via `run.py batch`: null and random score 0 on every challenge; the scripted reference
-  passes — the range discriminates.
+  passes — the range discriminates. Swept across seeds 0–2 (per-round variants), the result holds
+  on every seed (null/random 0/3, scripted 3/3): see `results/baselines.md`.
 - The physical sim is deterministic: task03's settled deviation was 2.0 m across repeated runs
   (sd 0.0), 1.0 m above threshold (`run.py measure`, DESIGN §14; audit M7).
 - Human and agent runs share the console, budget and scoring; the human-baseline protocol is in
@@ -111,6 +112,8 @@ in CI.
   randomized episodes, against null/random/scripted baselines.
 - Human cohort on the same challenges (n ≥ 8), reported beside the agent condition.
 - All rows carry provenance (image digest, scenario hash, seed) for reproducibility.
+- The keyless baseline rows are already produced and committed (`results/baselines.md`); agent rows
+  drop into the same table through `harness/agent_actor.py` once a model key is provided.
 
 ## 9. Limitations and threats to validity
 - v1 single-container results are a machinery demo, not benchmark data, until challenges run on the
