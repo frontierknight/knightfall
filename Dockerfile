@@ -12,7 +12,7 @@ FROM ros:humble-ros-base
 
 SHELL ["/bin/bash", "-c"]
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      ros-humble-sros2 ros-humble-demo-nodes-cpp python3 \
+      ros-humble-sros2 python3 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /knightfall

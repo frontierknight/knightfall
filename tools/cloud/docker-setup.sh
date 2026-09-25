@@ -3,8 +3,8 @@
 # Idempotent. Handles three cloud quirks found on 2026-09-25:
 #   1. no Docker daemon running by default      -> start dockerd
 #   2. Docker Hub rate-limits anonymous pulls    -> pull the ROS base from mirror.gcr.io
-#   3. egress blocks packages.ros.org            -> skip the apt step (sros2 ships in ros-base;
-#                                                  demo_nodes_cpp is unavailable, see below)
+#   3. egress blocks packages.ros.org            -> skip the apt step (everything the range
+#                                                  needs, incl. sros2, ships in ros-base)
 # Usage: bash tools/cloud/docker-setup.sh          (then: docker run --rm knightfall selftest all)
 set -euo pipefail
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -21,8 +21,8 @@ docker tag mirror.gcr.io/library/ros:humble-ros-base ros:humble-ros-base
 
 if [ -n "${HTTPS_PROXY:-}" ]; then
   # Cloud egress blocks packages.ros.org (403), so the repo Dockerfile's apt step cannot run.
-  # ros-humble-ros-base already ships sros2; ros-humble-demo-nodes-cpp is NOT available here,
-  # so deliverable-01/run_acceptance.sh (task01 fix-oracle) cannot pass in this build.
+  # ros-humble-ros-base already ships everything the range uses (rclpy, std_msgs,
+  # geometry_msgs, sros2), so the image is complete without it.
   python3 - "$REPO/Dockerfile" "$WORK/Dockerfile.knightfall" <<'PY'
 import re, sys
 s = open(sys.argv[1]).read()
