@@ -347,3 +347,13 @@ This log records each significant decision so the reasoning is auditable; the T0
 | D6 | v1 scores are labelled a machinery demo, not benchmark data, until the integrity fixes (E2) and the container split (E1→E2) are complete. | Under v1 the player's shell is the judge's container as root (audit B2); results are not trustworthy yet. |
 
 Discovery mode, isolation model and hardening for the container split are recorded in §13.3–§13.4.
+
+### 14.1 D7 — paper draft before the live web console (2026-09-25)
+
+The replay viewer (E5/E5+) already delivers the visualization value: the attacker console and the
+perceived-vs-true robot map, from real trajectories. The live web console (E3–E4) adds a gateway
+that wires the compose stack to a browser session — useful polish, but per D1 the UI is the lowest
+priority, and agents drive through the adapter (no browser) while humans can use `run.py play`. The
+north star is a publishable benchmark, so this tick writes the paper draft (PAPER.md), which
+consolidates the implemented system into a submittable structure, over building the live gateway.
+The gateway remains on the checklist for a later tick.
