@@ -10,7 +10,8 @@ LOG="${KNIGHTFALL_LAUNCH_LOG:-/tmp/kf-launch.log}"
 
 # Xvfb gives the sensor renderer (ogre2, gpu_lidar) a software GL context.
 setsid xvfb-run -a -s "-screen 0 1280x1024x24" \
-  ros2 launch nav2_bringup tb3_simulation_launch.py headless:=True use_rviz:=False >"$LOG" 2>&1 &
+  ros2 launch nav2_bringup tb3_simulation_launch.py headless:=True use_rviz:=False \
+    world:="$HERE/../../sim/worlds/sandbox.sdf.xacro" >"$LOG" 2>&1 &
 LAUNCH_PID=$!
 
 cleanup() {
