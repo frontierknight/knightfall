@@ -29,27 +29,28 @@ GOAL_TOL = 0.5                # m: true pose must end this close to the goal
 
 
 class Monitor(Node):
+    # Callbacks are named _on_*: rclpy.Node already uses _clock etc. as instance attributes.
     def __init__(self):
         super().__init__("kf_smoke_monitor")
         self.lock = threading.Lock()
         self.scans = []            # wall timestamps of received scans
-        self.clock = None          # latest sim time (s)
+        self.sim_time = None       # latest sim time (s)
         self.amcl = None           # latest AMCL (x, y)
-        self.create_subscription(LaserScan, "/scan", self._scan, qos_profile_sensor_data)
-        self.create_subscription(Clock, "/clock", self._clock, 10)
+        self.create_subscription(LaserScan, "/scan", self._on_scan, qos_profile_sensor_data)
+        self.create_subscription(Clock, "/clock", self._on_clock, 10)
         amcl_qos = QoSProfile(depth=1, reliability=ReliabilityPolicy.RELIABLE,
                               durability=DurabilityPolicy.TRANSIENT_LOCAL)
-        self.create_subscription(PoseWithCovarianceStamped, "/amcl_pose", self._amcl, amcl_qos)
+        self.create_subscription(PoseWithCovarianceStamped, "/amcl_pose", self._on_amcl, amcl_qos)
 
-    def _scan(self, _msg):
+    def _on_scan(self, _msg):
         with self.lock:
             self.scans.append(time.monotonic())
 
-    def _clock(self, msg):
+    def _on_clock(self, msg):
         with self.lock:
-            self.clock = msg.clock.sec + msg.clock.nanosec * 1e-9
+            self.sim_time = msg.clock.sec + msg.clock.nanosec * 1e-9
 
-    def _amcl(self, msg):
+    def _on_amcl(self, msg):
         with self.lock:
             p = msg.pose.pose.position
             self.amcl = (p.x, p.y)
@@ -104,11 +105,11 @@ def main():
 
     # 2. scan rate + real-time factor over a 10 s wall window
     with mon.lock:
-        n0, c0 = len(mon.scans), mon.clock
+        n0, c0 = len(mon.scans), mon.sim_time
     w0 = time.monotonic()
     time.sleep(10)
     with mon.lock:
-        n1, c1 = len(mon.scans), mon.clock
+        n1, c1 = len(mon.scans), mon.sim_time
     dw = time.monotonic() - w0
     report["scan_hz"] = round((n1 - n0) / dw, 2)
     report["rtf"] = round((c1 - c0) / dw, 3) if c0 is not None and c1 is not None else None
