@@ -8,6 +8,9 @@ different deployment condition — so results stay comparable, and the same rang
 human players and AI security agents ([Crimson Knight](https://github.com/frontierknight/crimson) /
 [Azure Knight](https://github.com/frontierknight/azure)).
 
+> **Start here: [`CORE.md`](CORE.md)** — the one-page core design (single source of truth).
+> Direction: moving to a single Gazebo simulation tier (TurtleBot3 + Nav2); see CORE §3.
+
 > Status: **3 challenges, Dockerized, CI-gated.** Access-control (SROS2 diagnostic leak),
 > authorization (maintenance over-privilege), and physical impact (localization spoofing) all run
 > end-to-end through one console (human == agent): graded 4-layer scoring, ground-truth isolation,
