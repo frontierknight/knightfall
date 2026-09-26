@@ -79,6 +79,21 @@ class WebSessionTest(unittest.TestCase):
         st = mgr.state(sid)
         self.assertEqual(st["map"]["true"], [3.0, -2.0])
 
+    def test_state_poll_mints_effect_flag(self):
+        # a physical effect confirmed while the player is idle must still earn its flag
+        confirmed = set()
+
+        def make_effect(task):
+            scenario, backend = fake_make(task)
+            scenario["scoring"]["type"] = "judge_confirm"
+            backend.confirm_checkpoints = lambda: set(confirmed)
+            return scenario, backend
+        mgr = SessionManager(make=make_effect)
+        sid = mgr.start("task03")["id"]
+        self.assertEqual(mgr.state(sid)["flags"], {})
+        confirmed.add("interface_op")
+        self.assertRegex(mgr.state(sid)["flags"]["interface_op"], r"^KF\{[0-9a-f]{32}\}$")
+
     def test_budget_enforced_via_manager(self):
         sid = self.mgr.start("task01")["id"]
         for i in range(5):
