@@ -5,7 +5,9 @@ self-test — no difference to the range) drives a challenge by:
     run_command(cmd) -> observation      # a command in the attacker terminal
     submit(value)    -> accepted?        # (challenges that use a flag)
     finish()         -> scored result
-Every call is logged to a trajectory; finish() scores via the judge. So every session — whoever
+Every call is logged to a trajectory; finish() scores via the judge. When the judge confirms a
+weighted layer of a judge-confirmed scenario, the session mints that layer's effect flag
+(flags.py); captured_flags() shows them to the player. So every session — whoever
 plays — yields one RL-ready trajectory.
 
 The backend (per challenge) provides the attacker sandbox (`exec_action`), `briefing`,
@@ -16,6 +18,7 @@ import time
 from trajectory import Trajectory
 from judge import Judge
 from provenance import collect as collect_provenance
+from flags import FlagMinter, effect_layers
 
 BUDGET_EXHAUSTED = "[budget exhausted: no further actions accepted; type 'done' to score]"
 
@@ -37,6 +40,9 @@ class Session:
         self._t0 = None
         self._judge_s = 0.0       # time spent in judge-side checks; not charged to the player
         self._open = False
+        self._minter = FlagMinter()          # per-round secret; never leaves the judge side
+        self._effect_layers = effect_layers(scenario["scoring"])
+        self._flags = {}                     # layer -> effect flag, minted once confirmed
 
     def start(self):
         ok, detail = self.backend.readiness_check()
@@ -62,9 +68,22 @@ class Session:
     def _checkpoints(self):
         t = time.monotonic()
         try:
-            return sorted(self.backend.confirm_checkpoints())
+            confirmed = sorted(self.backend.confirm_checkpoints())
+            for layer in confirmed:
+                if layer in self._effect_layers and layer not in self._flags:
+                    self._flags[layer] = self._minter.mint(self.scenario["id"], layer)
+            return confirmed
         finally:
             self._judge_s += time.monotonic() - t
+
+    def checkpoints(self) -> list:
+        """Confirmed checkpoints now (judge-side; mints any newly earned effect flags). For
+        callers outside the action loop, e.g. the web console polling live state."""
+        return self._checkpoints()
+
+    def captured_flags(self) -> dict:
+        """Effect flags captured so far (layer -> flag), in layer order."""
+        return {layer: self._flags[layer] for layer in self._effect_layers if layer in self._flags}
 
     def run_command(self, cmd: str) -> str:
         """Run one action in the attacker terminal; log it; return the observation.
@@ -92,10 +111,14 @@ class Session:
         used = {"steps": self._steps, "wall_clock_s": round(self._player_time(), 1),
                 "judge_s": round(self._judge_s, 1), "exhausted": self.over_budget()}
         extra = self.backend.artifacts() if hasattr(self.backend, "artifacts") else None
+        flags = self.captured_flags()
+        if self._effect_layers:
+            extra = {**(extra or {}), "flags_captured": list(flags)}
         if self._open:
             self._traj.result(final_score=res["graded_score"], outcome=outcome,
                               checkpoints=res["breakdown"], budget_used=used, extra=extra)
             self._traj.__exit__()
             self._open = False
         self.backend.reset()
-        return {"outcome": outcome, **res, "budget_used": used, "trajectory": self._traj.path}
+        return {"outcome": outcome, **res, "flags": flags, "budget_used": used,
+                "trajectory": self._traj.path}

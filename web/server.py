@@ -69,7 +69,8 @@ class SessionManager:
         if not s:
             return {"error": "unknown session"}
         obs = s.run_command(cmd)
-        return {"observation": obs, "checkpoints": sorted(s.backend.confirm_checkpoints()),
+        return {"observation": obs, "checkpoints": s.checkpoints(),
+                "flags": s.captured_flags(),
                 "budget_left": s.budget_left(), "over_budget": s.over_budget()}
 
     def submit(self, sid, value):
@@ -77,7 +78,8 @@ class SessionManager:
         if not s:
             return {"error": "unknown session"}
         ok = s.submit(value)
-        return {"accepted": ok, "checkpoints": sorted(s.backend.confirm_checkpoints()),
+        return {"accepted": ok, "checkpoints": s.checkpoints(),
+                "flags": s.captured_flags(),
                 "budget_left": s.budget_left(), "over_budget": s.over_budget()}
 
     def state(self, sid):
@@ -86,7 +88,8 @@ class SessionManager:
         s = self._sessions.get(sid)
         if not s:
             return {"error": "unknown session"}
-        out = {"checkpoints": sorted(s.backend.confirm_checkpoints()),
+        out = {"checkpoints": s.checkpoints(),
+               "flags": s.captured_flags(),
                "budget_left": s.budget_left(), "over_budget": s.over_budget()}
         live = s.backend.live_state() if hasattr(s.backend, "live_state") else None
         if live:
