@@ -5,7 +5,7 @@ name: gz-image
 on:
   push:
     branches: [main, "claude/**"]
-    paths: ["docker/gz/**", "tools/gz/**", ".github/workflows/gz-image.yml"]
+    paths: ["docker/gz/**", "tools/gz/**", "sim/**", ".github/workflows/gz-image.yml"]
   workflow_dispatch:
 
 permissions:
