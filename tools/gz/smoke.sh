@@ -2,8 +2,9 @@
 # Headless smoke test for the Gazebo tier: bring up Gazebo + TurtleBot3 + Nav2 with no GPU/display,
 # then run tools/gz/smoke.py (lidar up, real-time factor, a Nav2 goal reached, ground truth read over
 # gz-transport). Exits non-zero if any gate fails. Extra args are passed to smoke.py.
-set -uo pipefail
+# ROS setup scripts read unset variables, so source before enabling -u.
 source /opt/ros/jazzy/setup.bash
+set -uo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 LOG="${KNIGHTFALL_LAUNCH_LOG:-/tmp/kf-launch.log}"
 
