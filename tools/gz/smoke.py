@@ -13,7 +13,7 @@ from __future__ import annotations
 import argparse, json, math, re, subprocess, sys, threading, time
 
 import rclpy
-from rclpy.executors import SingleThreadedExecutor
+from rclpy.executors import ExternalShutdownException, SingleThreadedExecutor
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, DurabilityPolicy, ReliabilityPolicy, qos_profile_sensor_data
 from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped
@@ -72,8 +72,7 @@ def gz_true_pose(model):
 
 def pose_stamped(nav, x, y):
     p = PoseStamped()
-    p.header.frame_id = "map"
-    p.header.stamp = nav.get_clock().now().to_msg()
+    p.header.frame_id = "map"   # stamp left at 0 = "latest"; this node runs on wall time, the sim does not
     p.pose.position.x, p.pose.position.y = x, y
     p.pose.orientation.w = 1.0
     return p
@@ -90,7 +89,25 @@ def main():
     mon = Monitor()
     ex = SingleThreadedExecutor()
     ex.add_node(mon)
-    threading.Thread(target=ex.spin, daemon=True).start()
+    spinner = threading.Thread(target=_spin, args=(ex,), daemon=True)
+    spinner.start()
+    try:
+        return run_checks(mon, a)
+    finally:
+        # Wake the executor and join its thread before exiting: an interpreter exit while the
+        # thread is still inside rcl's wait aborts the process ("terminate called ...", rc 134).
+        rclpy.try_shutdown()
+        spinner.join(timeout=5)
+
+
+def _spin(ex):
+    try:
+        ex.spin()
+    except ExternalShutdownException:
+        pass
+
+
+def run_checks(mon, a):
     report, fails, warns = {}, [], []
 
     # 1. lidar up
@@ -159,7 +176,6 @@ def main():
 
     report["pass"] = not fails
     print(json.dumps({"report": report, "fails": fails, "warnings": warns}, indent=2))
-    ex.shutdown()
     return 0 if not fails else 1
 
 
