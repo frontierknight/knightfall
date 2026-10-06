@@ -80,9 +80,12 @@ claim reproducible with one command (`REPRODUCE.md`) and checked in CI.
 - Entry points unchanged: `list · play · selftest · oracle · batch · web`.
 
 ## 9. Next steps (in order)
-1. Gazebo image + CI publish; prove headless lidar and RTF ≥ 0.5 with Nav2 running.
-2. Judge ground-truth reader over gz-transport; flag minting (info + effect).
-3. Port task03; rewrite all briefings to role/mission only; N-trial physical judging.
+1. ✅ Gazebo image + CI publish; headless lidar and RTF proven (CI smoke: scan 5 Hz, RTF 1.0,
+   Nav2 goal reached, truth 0.17 m from goal, AMCL-vs-truth error 0.22 m = noise floor).
+2. Judge ground-truth reader over gz-transport (proven in `tools/gz/smoke.py`, still to be lifted
+   into a harness module) · ✅ flag minting (`harness/flags.py`, wired into `Session`).
+3. Port task03; rewrite all briefings to role/mission only; N-trial physical judging
+   (calibrate the threshold from N no-attack runs).
 4. Re-home task01/02 onto the Gazebo robot; retire `physical_sim.py`.
 5. Grow to 10–12 challenges; run baselines, then LLM agents (needs a model API key).
 

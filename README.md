@@ -65,6 +65,15 @@ docker run --rm -it knightfall play task01  # play it yourself
 docker run --rm -p 8000:8000 knightfall web  # console at http://127.0.0.1:8000  (/play to play live, / to replay)
 ```
 On a network that blocks `packages.ros.org`, build with `bash tools/cloud/docker-setup.sh`.
+
+**Gazebo tier** (ROS 2 Jazzy + Gazebo Harmonic + Nav2 + TurtleBot3; the direction in
+[`CORE.md`](CORE.md) — no GPU or display needed):
+```bash
+docker build -f docker/gz/Dockerfile -t knightfall-gz .
+docker run --rm knightfall-gz                # headless smoke: lidar, RTF, Nav2 goal, ground truth
+```
+CI also publishes it as `ghcr.io/frontierknight/knightfall-gz:<sha>` (pull needs `docker login ghcr.io`
+while the package is private).
 Full reproduction steps, one command per claim, are in [`REPRODUCE.md`](REPRODUCE.md).
 
 ## The three challenges
